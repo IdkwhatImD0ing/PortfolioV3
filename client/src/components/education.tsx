@@ -7,21 +7,21 @@ const educationData = [
         degree: "Master's in Computer Science + AI",
         duration: "August 2023 - May 2025",
         details: "Focusing on advanced topics in Computer Science and Artificial Intelligence.",
-        logo: "/placeholder.svg?height=64&width=64"
+        logo: "/usc.png?height=64&width=64"
     },
     {
         school: "University of California, Santa Cruz (UCSC)",
         degree: "Bachelor's in Computer Science",
         duration: "September 2020 - March 2023",
         details: "Completed undergraduate studies in Computer Science.",
-        logo: "/placeholder.svg?height=64&width=64"
+        logo: "/ucsc.png?height=64&width=64"
     },
     {
         school: "Lynbrook High School",
         degree: "High School Diploma",
         duration: "2016 - 2020",
         details: "Completed secondary education with focus on college preparatory courses.",
-        logo: "/placeholder.svg?height=64&width=64"
+        logo: "/lynbrook.png?height=64&width=64"
     }
 ]
 
