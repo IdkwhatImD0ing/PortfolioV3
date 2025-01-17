@@ -1,7 +1,5 @@
 "use client";
 
-import EducationPage from "@/components/education";
-import PersonalPage from "@/components/personal";
 import { useEffect, useState, useRef } from "react";
 import { RetellWebClient } from "retell-client-js-sdk";
 
@@ -126,14 +124,13 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      {/* <button
+      <button
         onClick={startCall}
         disabled={isCalling}
         className="rounded-full bg-blue-500 px-8 py-4 text-white hover:bg-blue-600 disabled:bg-gray-400"
       >
         {isCalling ? "Call in Progress..." : "Start Call"}
-      </button> */}
-      <EducationPage />
+      </button>
     </div>
   );
 }
