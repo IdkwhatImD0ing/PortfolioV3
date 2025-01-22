@@ -9,7 +9,7 @@ export default function PersonalPage() {
         <CardContent className="p-6 md:p-8">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-8">
             <Image
-              src="/placeholder.svg?height=250&width=250"
+              src="/profile.webp?height=250&width=250"
               alt="Bill Zhang"
               width={250}
               height={250}
@@ -26,7 +26,7 @@ export default function PersonalPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
               <h2 className="text-2xl font-semibold mb-4">Personal Info</h2>
@@ -42,13 +42,13 @@ export default function PersonalPage() {
               <p>Currently working as an AI Engineer at RingCentral, focused on building conversational AI.</p>
             </div>
           </div>
-          
+
           <div>
             <h2 className="text-2xl font-semibold mb-4">About Me</h2>
             <p className="text-muted-foreground">
-              I'm a passionate AI engineer and computer science student specializing in Artificial Intelligence. 
-              Currently pursuing my degree at USC, I'm deeply interested in the field of conversational AI and its 
-              potential to revolutionize human-computer interaction. My work at RingCentral allows me to apply my 
+              I'm a passionate AI engineer and computer science student specializing in Artificial Intelligence.
+              Currently pursuing my degree at USC, I'm deeply interested in the field of conversational AI and its
+              potential to revolutionize human-computer interaction. My work at RingCentral allows me to apply my
               knowledge and skills to real-world problems, creating innovative solutions in the AI space.
             </p>
           </div>

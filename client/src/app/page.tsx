@@ -2,6 +2,7 @@
 
 import EducationPage from "@/components/education";
 import PersonalPage from "@/components/personal";
+import ProjectPage from "@/components/project";
 import { useEffect, useState, useRef } from "react";
 import { RetellWebClient } from "retell-client-js-sdk";
 
@@ -133,7 +134,7 @@ export default function Home() {
       >
         {isCalling ? "Call in Progress..." : "Start Call"}
       </button> */}
-      <EducationPage />
+      <ProjectPage />
     </div>
   );
 }
