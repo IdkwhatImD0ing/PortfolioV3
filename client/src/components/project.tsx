@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Github, LinkIcon } from 'lucide-react'
+import Lanyard from "./Lanyard/Lanyard"
 
 const project = {
   "name": "Counsely",
@@ -49,6 +50,7 @@ export default function ProjectPage() {
                   </span>
                 ))}
               </div>
+              <Lanyard />
               <div className="flex gap-4 mt-auto">
                 {project.link && (
                   <a href={project.link} target="_blank" rel="noopener noreferrer">
