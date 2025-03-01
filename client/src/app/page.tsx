@@ -3,8 +3,9 @@
 import EducationPage from "@/components/education";
 import PersonalPage from "@/components/personal";
 import ProjectPage from "@/components/project";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Profiler } from "react";
 import { RetellWebClient } from "retell-client-js-sdk";
+import { VoiceChatSidebar } from "@/components/VoiceChatSidebar";
 
 interface RegisterCallResponse {
   access_token: string;
@@ -126,15 +127,19 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      {/* <button
+    <div className="flex h-screen">
+      <VoiceChatSidebar />
+      <div className="flex flex-1 min-h-screen items-center justify-center">
+
+        {/* <button
         onClick={startCall}
         disabled={isCalling}
         className="rounded-full bg-blue-500 px-8 py-4 text-white hover:bg-blue-600 disabled:bg-gray-400"
       >
         {isCalling ? "Call in Progress..." : "Start Call"}
       </button> */}
-      <ProjectPage />
+        <ProjectPage />
+      </div>
     </div>
   );
 }

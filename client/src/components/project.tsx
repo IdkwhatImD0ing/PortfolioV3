@@ -23,7 +23,7 @@ const project = {
 
 export default function ProjectPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col p-4 md:p-8">
+    <div className="min-h-screen flex flex-col p-4 md:p-8">
       <h1 className="text-4xl font-bold mb-8">Project: {project.name}</h1>
       <div className="flex flex-col lg:flex-row gap-8 flex-grow">
         <div className="w-full lg:w-1/2">
@@ -37,14 +37,14 @@ export default function ProjectPage() {
           </div>
         </div>
         <div className="w-full lg:w-1/2">
-          <Card className="h-full bg-card text-card-foreground">
+          <Card className="h-full">
             <CardContent className="p-6 flex flex-col h-full">
               <h2 className="text-3xl font-semibold mb-4">About the Project</h2>
-              <p className="text-muted-foreground mb-6">{project.description}</p>
+              <p className="mb-6">{project.description}</p>
               <h3 className="text-xl font-semibold mb-3">Tech Stack</h3>
               <div className="flex flex-wrap gap-2 mb-6">
                 {project.techStack.map((tech) => (
-                  <span key={tech} className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm">
+                  <span key={tech} className="px-3 py-1 rounded-full text-sm">
                     {tech}
                   </span>
                 ))}
@@ -72,4 +72,3 @@ export default function ProjectPage() {
     </div>
   )
 }
-

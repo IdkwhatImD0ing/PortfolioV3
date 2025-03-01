@@ -35,15 +35,9 @@ export function VoiceChatSidebar() {
 
   return (
     <div className="flex flex-col h-screen w-64 bg-background border-r border-border">
-      {/* Logo and Text */}
-      <div className="p-4 flex items-center space-x-2">
-        <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-full" />
-        <div className="text-sm font-semibold">NBExt Voice Assistant</div>
-      </div>
-
       {/* Headshot */}
       <div className="p-4">
-        <Image src="/headshot.png" alt="NBExt Headshot" width={200} height={200} className="rounded-full mx-auto" />
+        <Image src="/profile.webp" alt="NBExt Headshot" width={200} height={200} className="rounded-full mx-auto" />
       </div>
 
       {/* Transcript */}
