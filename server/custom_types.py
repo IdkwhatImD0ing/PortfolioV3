@@ -1,3 +1,5 @@
+from typing import Union
+
 from typing import Any, List, Optional, Literal, Union
 from pydantic import BaseModel
 from typing import Literal, Dict, Optional
@@ -30,9 +32,15 @@ class ResponseRequiredRequest(BaseModel):
     transcript: List[Utterance]
 
 
-CustomLlmRequest = Union[
-    ResponseRequiredRequest | UpdateOnlyRequest | CallDetailsRequest | PingPongRequest
+# CustomLlmRequest = Union[
+#     ResponseRequiredRequest | UpdateOnlyRequest | CallDetailsRequest | PingPongRequest
+# ]
+
+CustomLlmResponse = Union[
+    ResponseRequiredRequest, UpdateOnlyRequest, CallDetailsRequest, PingPongRequest
 ]
+
+22
 
 
 # Your Server -> Retell Events
@@ -58,4 +66,29 @@ class ResponseResponse(BaseModel):
     transfer_number: Optional[str] = None
 
 
-CustomLlmResponse = Union[ConfigResponse | PingPongResponse | ResponseResponse]
+class AgentInterruptResponse(BaseModel):
+    response_type: Literal["agent_interrupt"] = "agent_interrupt"
+    interrupt_id: int
+    content: str
+    content_complete: bool
+    no_interruption_allowed: Optional[bool] = None
+    end_call: Optional[bool] = False
+    transfer_number: Optional[str] = None
+    digit_to_press: Optional[str] = None
+
+
+class ToolCallInvocationResponse(BaseModel):
+    response_type: Literal["tool_call_invocation"] = "tool_call_invocation"
+    tool_call_id: str
+    name: str
+    arguments: str
+
+
+class ToolCallResultResponse(BaseModel):
+    response_type: Literal["tool_call_result"] = "tool_call_result"
+    tool_call_id: str
+    content: str
+
+
+# CustomLlmResponse = Union[ConfigResponse | PingPongResponse | ResponseResponse]
+CustomLlmResponse = Union[ConfigResponse, PingPongResponse, ResponseResponse]
