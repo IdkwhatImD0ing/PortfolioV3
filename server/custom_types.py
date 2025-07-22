@@ -37,10 +37,11 @@ class ResponseRequiredRequest(BaseModel):
 # ]
 
 CustomLlmResponse = Union[
-    ResponseRequiredRequest, UpdateOnlyRequest, CallDetailsRequest, PingPongRequest
+    ResponseRequiredRequest,
+    UpdateOnlyRequest,
+    CallDetailsRequest,
+    PingPongRequest,
 ]
-
-22
 
 
 # Your Server -> Retell Events
