@@ -208,7 +208,7 @@ class LlmClient:
                     message = args.get("message", "")
                     print("end_call:", message)
                     yield ResponseResponse(
-                        response_id=response_id,
+                        response_id=request.response_id,
                         content=message,
                         content_complete=True,
                         end_call=True,
