@@ -2,7 +2,7 @@ from typing import Dict
 from fastapi import WebSocket
 
 
-# manages the connection across mukt clients and sate of ws
+# Manages WebSocket connections across multiple clients and tracks state
 class ConnectionManager:
     # initializes ws and adds to active connections inside of a dictionary
     def __init__(self):
