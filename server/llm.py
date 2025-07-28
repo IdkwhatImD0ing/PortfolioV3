@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 import os
 import json
 
@@ -14,36 +13,45 @@ from custom_types import (
     Utterance,
     ToolCallInvocationResponse,
     ToolCallResultResponse,
-    AgentInterruptResponse,
 )
 import pusher
 
 from prompts import system_prompt, begin_sentence
 
+# Global pusher instance to be set by LlmClient
+_pusher_client: Optional[pusher.Pusher] = None
 
-@dataclass
-class PortfolioContext:
-    pusher: pusher.Pusher
+
+def get_pusher() -> pusher.Pusher:
+    """Get the global pusher client."""
+    if _pusher_client is None:
+        raise RuntimeError("Pusher client not initialized")
+    return _pusher_client
 
 
 @function_tool
-async def display_homepage(context: PortfolioContext) -> str:
+async def display_homepage() -> str:
     """Displays the homepage on the frontend."""
-    context.pusher.trigger("frontend", "display_homepage", {})
+    pusher_client = get_pusher()
+    pusher_client.trigger("frontend", "display_homepage", {})
     return "homepage displayed"
 
 
 @function_tool
-async def display_education_page(context: PortfolioContext) -> str:
+async def display_education_page() -> str:
     """Displays the education page on the frontend."""
-    context.pusher.trigger("frontend", "display_education_page", {})
+    pusher_client = get_pusher()
+    pusher_client.trigger("frontend", "display_education_page", {})
     return "education page displayed"
 
 
 @function_tool
-async def display_project(context: PortfolioContext, project_id: str | None = None) -> str:
+async def display_project(project_id: str | None = None) -> str:
     """Displays a projects page on the frontend."""
-    context.pusher.trigger("frontend", "display_project", {"project_id": project_id})
+    pusher_client = get_pusher()
+    pusher_client.trigger(
+        "frontend", "display_project", {"project_id": project_id}
+    )
     return "project displayed"
 
 
@@ -57,6 +65,10 @@ class LlmClient:
             cluster=os.environ["PUSHER_CLUSTER"],
             ssl=True,
         )
+        
+        # Set the global pusher client
+        global _pusher_client
+        _pusher_client = self.pusher
 
         self.agent = Agent(
             name="portfolio-agent",
@@ -74,7 +86,9 @@ class LlmClient:
         )
         return response
 
-    def convert_transcript_to_openai_messages(self, transcript: List[Utterance]):
+    def convert_transcript_to_openai_messages(
+        self, transcript: List[Utterance]
+    ):
         messages = []
         for utterance in transcript:
             role = "assistant" if utterance.role == "agent" else "user"
@@ -82,9 +96,10 @@ class LlmClient:
         return messages
 
     async def draft_response(self, request: ResponseRequiredRequest):
-        context = PortfolioContext(self.pusher)
-        messages = self.convert_transcript_to_openai_messages(request.transcript)
-        result = Runner.run_streamed(self.agent, messages, context=context)
+        messages = self.convert_transcript_to_openai_messages(
+            request.transcript
+        )
+        result = Runner.run_streamed(self.agent, messages)
 
         async for event in result.stream_events():
             if isinstance(event, RunItemStreamEvent):
@@ -98,15 +113,38 @@ class LlmClient:
                     )
                 elif event.name == "tool_called":
                     tc = event.item.raw_item
+                    # Handle both dict and object cases
+                    if isinstance(tc, dict):
+                        call_id = tc.get('call_id', tc.get('id', ''))
+                        name = tc.get('name', '')
+                        arguments = tc.get('arguments', {})
+                    else:
+                        call_id = getattr(
+                            tc, 'call_id', getattr(tc, 'id', '')
+                        )
+                        name = getattr(tc, 'name', '')
+                        arguments = getattr(tc, 'arguments', {})
+                    
                     yield ToolCallInvocationResponse(
-                        tool_call_id=tc.call_id,
-                        name=tc.name,
-                        arguments=json.dumps(tc.arguments),
+                        tool_call_id=call_id,
+                        name=name,
+                        arguments=json.dumps(arguments),
                     )
                 elif event.name == "tool_output":
                     output = str(event.item.output)
+                    raw_item = event.item.raw_item
+                    # Handle both dict and object cases
+                    if isinstance(raw_item, dict):
+                        call_id = raw_item.get(
+                            'call_id', raw_item.get('id', '')
+                        )
+                    else:
+                        call_id = getattr(
+                            raw_item, 'call_id', getattr(raw_item, 'id', '')
+                        )
+                    
                     yield ToolCallResultResponse(
-                        tool_call_id=event.item.raw_item.call_id,
+                        tool_call_id=call_id,
                         content=output,
                     )
 
