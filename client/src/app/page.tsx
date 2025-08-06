@@ -3,20 +3,13 @@
 import EducationPage from "@/components/education";
 import PersonalPage from "@/components/personal";
 import ProjectPage from "@/components/project";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { RetellWebClient } from "retell-client-js-sdk";
 import { VoiceChatSidebar } from "@/components/app-sidebar";
-import Pusher from "pusher-js";
 
 interface RegisterCallResponse {
   access_token: string;
   call_id: string;
-}
-
-
-interface UserEventData {
-  page: "education" | "project" | "personal";
-  project_id?: string;
 }
 
 const retellWebClient = new RetellWebClient();
@@ -25,33 +18,6 @@ export default function Home() {
   const [isCalling, setIsCalling] = useState(false);
   const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<"education" | "project" | "personal">("personal");
-  const pusherRef = useRef<Pusher | null>(null);
-
-
-  // Setup Pusher once a call is started
-  useEffect(() => {
-    if (!currentCallId) return;
-
-    Pusher.logToConsole = process.env.NODE_ENV === "development";
-
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || "", {
-      cluster: "us3",
-    });
-
-    const channel = pusher.subscribe(`user-channel-${currentCallId}`);
-    channel.bind("user-event", (data: UserEventData) => {
-      console.log("Received pusher event:", data);
-      setActivePage(data.page);
-    });
-
-    pusherRef.current = pusher;
-
-    return () => {
-      if (pusherRef.current) {
-        pusherRef.current.unsubscribe(`user-channel-${currentCallId}`);
-      }
-    };
-  }, [currentCallId]);
 
   // Initialize the SDK, set up event listeners, and start the call
   useEffect(() => {
@@ -103,6 +69,9 @@ export default function Home() {
 
   async function startCall() {
     try {
+      // Generate a unique user ID for this session
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const response = await fetch("/api/create-web-call", {
         method: "POST",
         headers: {
@@ -110,6 +79,11 @@ export default function Home() {
         },
         body: JSON.stringify({
           agent_id: "agent_c5ae64152c9091e17243c9bdfc", // Default test agent
+          metadata: {
+            user_id: userId,
+            session_started: new Date().toISOString(),
+            platform: "web",
+          },
         }),
       });
 
@@ -153,4 +127,3 @@ export default function Home() {
     </div>
   );
 }
-

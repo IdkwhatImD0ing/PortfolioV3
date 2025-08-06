@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 import os
 import json
 
@@ -14,62 +14,36 @@ from custom_types import (
     ToolCallInvocationResponse,
     ToolCallResultResponse,
 )
-import pusher
 
 from prompts import system_prompt, begin_sentence
-
-# Global pusher instance to be set by LlmClient
-_pusher_client: Optional[pusher.Pusher] = None
-
-
-def get_pusher() -> pusher.Pusher:
-    """Get the global pusher client."""
-    if _pusher_client is None:
-        raise RuntimeError("Pusher client not initialized")
-    return _pusher_client
 
 
 @function_tool
 async def display_homepage() -> str:
     """Displays the homepage on the frontend."""
-    pusher_client = get_pusher()
-    pusher_client.trigger("frontend", "display_homepage", {})
+    # TODO: Implement actual frontend communication
     return "homepage displayed"
 
 
 @function_tool
 async def display_education_page() -> str:
     """Displays the education page on the frontend."""
-    pusher_client = get_pusher()
-    pusher_client.trigger("frontend", "display_education_page", {})
+    # TODO: Implement actual frontend communication
     return "education page displayed"
 
 
 @function_tool
 async def display_project(project_id: str | None = None) -> str:
     """Displays a projects page on the frontend."""
-    pusher_client = get_pusher()
-    pusher_client.trigger(
-        "frontend", "display_project", {"project_id": project_id}
-    )
-    return "project displayed"
+    # TODO: Implement actual frontend communication
+    return f"project {project_id} displayed" if project_id else "project page displayed"
 
 
 class LlmClient:
     def __init__(self, call_id: str):
         self.call_id = call_id
         self.client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
-        self.pusher = pusher.Pusher(
-            app_id=os.environ["PUSHER_APP_ID"],
-            key=os.environ["PUSHER_KEY"],
-            secret=os.environ["PUSHER_SECRET"],
-            cluster=os.environ["PUSHER_CLUSTER"],
-            ssl=True,
-        )
-        
-        # Set the global pusher client
-        global _pusher_client
-        _pusher_client = self.pusher
+        self.metadata = {}  # Store metadata from the call
 
         self.agent = Agent(
             name="portfolio-agent",
@@ -77,6 +51,11 @@ class LlmClient:
             model="gpt-4o-mini",
             tools=[display_homepage, display_education_page, display_project],
         )
+    
+    def set_metadata(self, metadata: dict):
+        """Store metadata from the call for use in responses."""
+        self.metadata = metadata
+        print(f"LLM Client received metadata for user: {metadata.get('user_id', 'unknown')}")
 
     def draft_begin_message(self):
         response = ResponseResponse(
@@ -91,6 +70,20 @@ class LlmClient:
         self, transcript: List[Utterance]
     ):
         messages = []
+        
+        # Add system message with user metadata if available
+        if self.metadata:
+            user_info = f"User ID: {self.metadata.get('user_id', 'unknown')}"
+            if 'session_started' in self.metadata:
+                user_info += f"\nSession started: {self.metadata['session_started']}"
+            if 'platform' in self.metadata:
+                user_info += f"\nPlatform: {self.metadata['platform']}"
+            
+            messages.append({
+                "role": "system",
+                "content": f"Current user information:\n{user_info}"
+            })
+        
         for utterance in transcript:
             role = "assistant" if utterance.role == "agent" else "user"
             messages.append({"role": role, "content": utterance.content})
