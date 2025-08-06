@@ -15,7 +15,7 @@ pydantic-settings==2.2.1
 pygame==2.5.2
 pysocks==1.7.1
 python-multipart==0.0.9
-retell==0.5.1
+retell-sdk==4.40.0
 ruamel.yaml==0.17.21
 twilio==9.2.1
 ujson==5.9.0
