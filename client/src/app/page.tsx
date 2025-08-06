@@ -23,48 +23,35 @@ const retellWebClient = new RetellWebClient();
 
 export default function Home() {
   const [isCalling, setIsCalling] = useState(false);
-  const [fullTranscript, setFullTranscript] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const callId = useRef("");
-  const [uuid, setUuid] = useState<string>("");
+  const [currentCallId, setCurrentCallId] = useState<string | null>(null);
+  const [activePage, setActivePage] = useState<"education" | "project" | "personal">("personal");
   const pusherRef = useRef<Pusher | null>(null);
 
-  // Generate and persist UUID on component mount
+
+  // Setup Pusher once a call is started
   useEffect(() => {
-    // Check if UUID exists in localStorage
-    const storedUuid = localStorage.getItem("visitorUuid");
-    const currentUuid = storedUuid || crypto.randomUUID();
+    if (!currentCallId) return;
 
-    if (!storedUuid) {
-      // Generate a new UUID if none exists
-      localStorage.setItem("visitorUuid", currentUuid);
-    }
-
-    setUuid(currentUuid);
-
-    // Initialize Pusher
     Pusher.logToConsole = process.env.NODE_ENV === "development";
 
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || "", {
-      cluster: "us3"
+      cluster: "us3",
     });
 
-    // Subscribe to channel with UUID
-    const channel = pusher.subscribe(`user-channel-${currentUuid}`);
+    const channel = pusher.subscribe(`user-channel-${currentCallId}`);
     channel.bind("user-event", (data: UserEventData) => {
       console.log("Received pusher event:", data);
-      // Handle the event data here
+      setActivePage(data.page);
     });
 
     pusherRef.current = pusher;
 
-    // Cleanup function
     return () => {
       if (pusherRef.current) {
-        pusherRef.current.unsubscribe(`user-channel-${currentUuid}`);
+        pusherRef.current.unsubscribe(`user-channel-${currentCallId}`);
       }
     };
-  }, []);
+  }, [currentCallId]);
 
   // Initialize the SDK, set up event listeners, and start the call
   useEffect(() => {
@@ -81,44 +68,20 @@ export default function Home() {
       console.log("Agent stopped talking");
     });
 
-    retellWebClient.on("update", (update) => {
-      setFullTranscript((prevTranscript: any) => {
-        if (update.transcript.length === 0) {
-          return prevTranscript;
-        }
 
-        const newMessage = update.transcript[update.transcript.length - 1];
-        const updatedTranscript = [...prevTranscript];
-
-        if (updatedTranscript.length > 0) {
-          const lastMessage = updatedTranscript[updatedTranscript.length - 1];
-
-          if (lastMessage.role === newMessage.role) {
-            updatedTranscript[updatedTranscript.length - 1] = newMessage;
-          } else {
-            updatedTranscript.push(newMessage);
-          }
-        } else {
-          updatedTranscript.push(newMessage);
-        }
-
-        return updatedTranscript;
-      });
-    });
-
-    retellWebClient.on("metadata", (metadata) => {
+    retellWebClient.on("metadata", () => {
       // Handle metadata if needed
     });
 
-    retellWebClient.on("call_ended", async (e) => {
+    retellWebClient.on("call_ended", async () => {
       console.log("Call has ended. Logging call id: ");
       setIsCalling(false);
+      setCurrentCallId(null);
     });
 
     retellWebClient.on("error", (error) => {
       console.error("An error occurred:", error);
       retellWebClient.stopCall();
-      setIsLoading(false);
     });
 
 
@@ -156,14 +119,13 @@ export default function Home() {
 
       const registerCallResponse: RegisterCallResponse = await response.json();
 
-      callId.current = registerCallResponse.call_id;
       console.log("---- FOUND CALL ID ------");
+      setCurrentCallId(registerCallResponse.call_id);
 
       if (registerCallResponse.access_token) {
         await retellWebClient.startCall({
           accessToken: registerCallResponse.access_token,
         });
-        setIsLoading(false); // Call has started, loading is done
       }
 
 
@@ -177,14 +139,16 @@ export default function Home() {
       <VoiceChatSidebar />
       <div className="flex flex-1 min-h-screen items-center justify-center">
 
-        {/* <button
-        onClick={startCall}
-        disabled={isCalling}
-        className="rounded-full bg-blue-500 px-8 py-4 text-white hover:bg-blue-600 disabled:bg-gray-400"
-      >
-        {isCalling ? "Call in Progress..." : "Start Call"}
-      </button> */}
-        <PersonalPage />
+        <button
+          onClick={startCall}
+          disabled={isCalling}
+          className="rounded-full bg-blue-500 px-8 py-4 text-white hover:bg-blue-600 disabled:bg-gray-400"
+        >
+          {isCalling ? "Call in Progress..." : "Start Call"}
+        </button>
+        {activePage === "personal" && <PersonalPage />}
+        {activePage === "education" && <EducationPage />}
+        {activePage === "project" && <ProjectPage />}
       </div>
     </div>
   );

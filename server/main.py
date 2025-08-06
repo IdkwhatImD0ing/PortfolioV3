@@ -74,7 +74,7 @@ async def handle_webhook(request: Request):
 async def websocket_handler(websocket: WebSocket, call_id: str):
     try:
         await websocket.accept()
-        llm_client = LlmClient()
+        llm_client = LlmClient(call_id)
 
         # Send optional config to Retell server
         config = ConfigResponse(

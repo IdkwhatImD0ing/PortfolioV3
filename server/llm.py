@@ -16,7 +16,8 @@ from prompts import system_prompt, begin_sentence
 
 
 class LlmClient:
-    def __init__(self):
+    def __init__(self, call_id: str):
+        self.call_id = call_id
         self.client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
         self.pusher = pusher.Pusher(
             app_id=os.environ["PUSHER_APP_ID"],
@@ -218,6 +219,24 @@ class LlmClient:
                         content=message,
                     )
                     return
+                elif fc.function.name == "display_homepage":
+                    self.pusher.trigger(
+                        f"user-channel-{self.call_id}",
+                        "user-event",
+                        {"page": "personal"},
+                    )
+                elif fc.function.name == "display_education_page":
+                    self.pusher.trigger(
+                        f"user-channel-{self.call_id}",
+                        "user-event",
+                        {"page": "education"},
+                    )
+                elif fc.function.name == "display_project":
+                    self.pusher.trigger(
+                        f"user-channel-{self.call_id}",
+                        "user-event",
+                        {"page": "project"},
+                    )
                 elif fc.function.name == "updateStatus":
                     status = args.get("status")
                     notes = args.get("notes")
