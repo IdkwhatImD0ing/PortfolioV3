@@ -4,81 +4,72 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a full-stack portfolio application featuring an AI voice assistant integration. The project consists of:
+This is a portfolio website with voice interaction capabilities, built as a full-stack application:
 
-- **Frontend**: Next.js 15.2.4 React application with TypeScript
-- **Backend**: FastAPI Python server with WebSocket support for real-time communication
-- **AI Integration**: Retell AI SDK for voice conversation capabilities
-- **Real-time**: Pusher for live updates and WebSocket connections
+- **Frontend**: Next.js 15 with TypeScript, React 19, and TailwindCSS
+- **Backend**: FastAPI Python server with Retell voice AI integration
+- **3D Graphics**: React Three Fiber with Drei and Rapier physics
 
 ## Development Commands
 
 ### Frontend (client/)
+
 ```bash
 cd client
-npm run dev          # Start development server with Turbopack
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+npm run dev         # Start development server with Turbopack
+npm run build       # Build production bundle
+npm run start       # Start production server
+npm run lint        # Run Next.js linting
 ```
 
 ### Backend (server/)
+
 ```bash
 cd server
-pip install -r requirements.txt  # Install Python dependencies
-python main.py                   # Start FastAPI server
+pip install -r requirements.txt    # Install Python dependencies
+uvicorn main:app --reload          # Start FastAPI development server
 ```
 
-## Architecture Overview
+## Architecture
 
 ### Frontend Structure
-- **App Router**: Uses Next.js App Router with TypeScript
-- **UI Components**: Built with Radix UI primitives and custom components
-- **Styling**: Tailwind CSS with custom theming and animations
-- **State Management**: React hooks for local state, no external state management
-- **Real-time**: Pusher client for live updates
-- **Voice Integration**: Retell Web Client SDK for voice interactions
 
-### Backend Structure  
-- **API Framework**: FastAPI with automatic OpenAPI documentation
-- **WebSocket Handling**: Dual WebSocket setup:
-  - `/llm-websocket/{call_id}`: Handles Retell AI voice processing
-  - `/ws`: General client communications with connection management
-- **LLM Integration**: Custom LLM client (`llm.py`) for AI conversation handling
-- **Event Management**: Webhook endpoint for Retell AI events
+- **`client/src/app/`**: Next.js app router pages and API routes
+  - `page.tsx`: Main portfolio page with voice chat integration
+  - `api/create-web-call/`: API endpoint for Retell call setup
+- **`client/src/components/`**: React components
+  - `education.tsx`, `personal.tsx`, `project.tsx`: Portfolio sections
+  - `VoiceChatSidebar.tsx`: Voice interaction UI
+  - `Lanyard/`: 3D card component with GLB model
+  - `ui/`: Reusable UI components (shadcn/ui based)
+- **Styling**: TailwindCSS with custom theme configuration, dark mode support via next-themes
 
-### Key Components Architecture
-- **VoiceChatSidebar**: Main voice interface with real-time transcript display
-- **PersonalPage/EducationPage/ProjectPage**: Portfolio content sections
-- **Theme Integration**: Dark mode support with next-themes
+### Backend Structure
 
-### Real-time Communication Flow
-1. Client connects to FastAPI WebSocket endpoint
-2. Retell AI handles voice-to-text conversion
-3. LLM client processes conversation context
-4. Responses flow back through WebSocket to update UI
-5. Pusher handles additional real-time features
+- **`server/main.py`**: FastAPI application with WebSocket support for Retell
+- **`server/socket_manager.py`**: WebSocket connection management
+- **`server/llm.py`**: LLM client for voice interactions
+- **`server/custom_types.py`**: Type definitions for Retell integration
 
-## Important Implementation Details
+### Key Integrations
 
-### Voice Integration
-- Uses Retell AI for voice processing with dedicated WebSocket connection
-- Conversation state managed through transcript arrays
-- WebSocket connection management includes automatic reconnection
-- Voice activity visualization using Motion animations
+1. **Retell Voice AI**: Real-time voice conversation handling
 
-### WebSocket Architecture
-- **Connection Management**: `socket_manager.py` handles client connections
-- **Dual WebSocket Pattern**: Separate endpoints for AI communication and general client updates
-- **Error Handling**: Comprehensive error handling for connection timeouts and disconnections
+   - Frontend: `retell-client-js-sdk` for browser WebRTC
+   - Backend: WebSocket server for audio streaming
+   - Webhook endpoints for call events
 
-### Security Considerations
-- CORS middleware configured for localhost development
-- API key authentication for Retell AI integration
-- Signature verification for webhook endpoints
+2. **3D Graphics**: Portfolio displays with React Three Fiber
 
-### Development Notes
-- **3D Dependencies Present**: React Three Fiber ecosystem installed but unused in current implementation
-- **Animation Library**: Uses Motion (successor to Framer Motion) for 2D animations
-- **Component Patterns**: Uses compound component patterns with Radix UI primitives
-- **TypeScript**: Strict TypeScript configuration throughout
+   - GLB model loading configured in `next.config.ts`
+   - Physics simulation with Rapier
+
+3. **Environment Variables**: Both frontend and backend use `.env` files
+   - Backend requires `RETELL_API_KEY` for voice services
+
+## Important Notes
+
+- TypeScript strict mode is enabled
+- Path alias `@/*` maps to `client/src/*`
+- CORS configured for `http://localhost:3000` in development
+- WebSocket support required for voice chat functionality
