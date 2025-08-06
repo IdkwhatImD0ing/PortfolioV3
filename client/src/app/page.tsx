@@ -3,13 +3,20 @@
 import EducationPage from "@/components/education";
 import PersonalPage from "@/components/personal";
 import ProjectPage from "@/components/project";
-import { useEffect, useState, useRef, Profiler } from "react";
+import { useEffect, useState, useRef } from "react";
 import { RetellWebClient } from "retell-client-js-sdk";
-import { VoiceChatSidebar } from "@/components/VoiceChatSidebar";
+import { VoiceChatSidebar } from "@/components/app-sidebar";
+import Pusher from "pusher-js";
 
 interface RegisterCallResponse {
   access_token: string;
   call_id: string;
+}
+
+
+interface UserEventData {
+  page: "education" | "project" | "personal";
+  project_id?: string;
 }
 
 const retellWebClient = new RetellWebClient();
@@ -19,9 +26,48 @@ export default function Home() {
   const [fullTranscript, setFullTranscript] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const callId = useRef("");
+  const [uuid, setUuid] = useState<string>("");
+  const pusherRef = useRef<Pusher | null>(null);
+
+  // Generate and persist UUID on component mount
+  useEffect(() => {
+    // Check if UUID exists in localStorage
+    const storedUuid = localStorage.getItem("visitorUuid");
+    const currentUuid = storedUuid || crypto.randomUUID();
+
+    if (!storedUuid) {
+      // Generate a new UUID if none exists
+      localStorage.setItem("visitorUuid", currentUuid);
+    }
+
+    setUuid(currentUuid);
+
+    // Initialize Pusher
+    Pusher.logToConsole = process.env.NODE_ENV === "development";
+
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || "", {
+      cluster: "us3"
+    });
+
+    // Subscribe to channel with UUID
+    const channel = pusher.subscribe(`user-channel-${currentUuid}`);
+    channel.bind("user-event", (data: UserEventData) => {
+      console.log("Received pusher event:", data);
+      // Handle the event data here
+    });
+
+    pusherRef.current = pusher;
+
+    // Cleanup function
+    return () => {
+      if (pusherRef.current) {
+        pusherRef.current.unsubscribe(`user-channel-${currentUuid}`);
+      }
+    };
+  }, []);
+
   // Initialize the SDK, set up event listeners, and start the call
   useEffect(() => {
-
     retellWebClient.on("call_started", () => {
       console.log("Call started");
       setIsCalling(true);
@@ -138,8 +184,9 @@ export default function Home() {
       >
         {isCalling ? "Call in Progress..." : "Start Call"}
       </button> */}
-        <ProjectPage />
+        <PersonalPage />
       </div>
     </div>
   );
 }
+
