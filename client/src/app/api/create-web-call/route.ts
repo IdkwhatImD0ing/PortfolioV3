@@ -66,15 +66,16 @@ export async function POST(request: NextRequest) {
                 ...corsHeaders,
             },
         });
-    } catch (error: any) {
-        console.error('Error creating web call:', error.response?.data || error.message);
+    } catch (error: unknown) {
+        const err = error as { response?: { data?: unknown; status?: number }; message?: string };
+        console.error('Error creating web call:', err.response?.data || err.message);
 
         // Determine the status code
-        const status = error.response?.status || 500;
+        const status = err.response?.status || 500;
 
         // Optionally, provide more detailed error messages
         const errorMessage =
-            error.response?.data?.error || 'Failed to create web call';
+            err.response?.data?.error || 'Failed to create web call';
 
         return NextResponse.json(
             { error: errorMessage },

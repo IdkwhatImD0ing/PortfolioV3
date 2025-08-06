@@ -3,10 +3,6 @@
 Integration test runner for LLM client - tests actual API calls.
 Make sure you have the required environment variables set before running:
 - OPENAI_API_KEY
-- PUSHER_APP_ID
-- PUSHER_KEY
-- PUSHER_SECRET
-- PUSHER_CLUSTER
 
 Run from the server directory:
     python run_integration_tests.py
@@ -240,7 +236,7 @@ async def main():
     print(f"{Colors.YELLOW}Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{Colors.END}")
     
     # Check environment variables
-    required_vars = ["OPENAI_API_KEY", "PUSHER_APP_ID", "PUSHER_KEY", "PUSHER_SECRET", "PUSHER_CLUSTER"]
+    required_vars = ["OPENAI_API_KEY"]
     missing = [var for var in required_vars if not os.environ.get(var)]
     
     if missing:
@@ -254,7 +250,7 @@ async def main():
     
     # Initialize client
     try:
-        client = LlmClient()
+        client = LlmClient("test-call-id")
         print(f"{Colors.GREEN}✓ LLM Client initialized{Colors.END}")
     except Exception as e:
         print(f"{Colors.RED}❌ Failed to initialize: {e}{Colors.END}")

@@ -3,68 +3,21 @@
 import EducationPage from "@/components/education";
 import PersonalPage from "@/components/personal";
 import ProjectPage from "@/components/project";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { RetellWebClient } from "retell-client-js-sdk";
 import { VoiceChatSidebar } from "@/components/app-sidebar";
-import Pusher from "pusher-js";
 
 interface RegisterCallResponse {
   access_token: string;
   call_id: string;
 }
 
-
-interface UserEventData {
-  page: "education" | "project" | "personal";
-  project_id?: string;
-}
-
 const retellWebClient = new RetellWebClient();
 
 export default function Home() {
   const [isCalling, setIsCalling] = useState(false);
-  const [fullTranscript, setFullTranscript] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const callId = useRef("");
-  const [uuid, setUuid] = useState<string>("");
-  const pusherRef = useRef<Pusher | null>(null);
-
-  // Generate and persist UUID on component mount
-  useEffect(() => {
-    // Check if UUID exists in localStorage
-    const storedUuid = localStorage.getItem("visitorUuid");
-    const currentUuid = storedUuid || crypto.randomUUID();
-
-    if (!storedUuid) {
-      // Generate a new UUID if none exists
-      localStorage.setItem("visitorUuid", currentUuid);
-    }
-
-    setUuid(currentUuid);
-
-    // Initialize Pusher
-    Pusher.logToConsole = process.env.NODE_ENV === "development";
-
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || "", {
-      cluster: "us3"
-    });
-
-    // Subscribe to channel with UUID
-    const channel = pusher.subscribe(`user-channel-${currentUuid}`);
-    channel.bind("user-event", (data: UserEventData) => {
-      console.log("Received pusher event:", data);
-      // Handle the event data here
-    });
-
-    pusherRef.current = pusher;
-
-    // Cleanup function
-    return () => {
-      if (pusherRef.current) {
-        pusherRef.current.unsubscribe(`user-channel-${currentUuid}`);
-      }
-    };
-  }, []);
+  const [currentCallId, setCurrentCallId] = useState<string | null>(null);
+  const [activePage, setActivePage] = useState<"education" | "project" | "personal">("personal");
 
   // Initialize the SDK, set up event listeners, and start the call
   useEffect(() => {
@@ -81,44 +34,20 @@ export default function Home() {
       console.log("Agent stopped talking");
     });
 
-    retellWebClient.on("update", (update) => {
-      setFullTranscript((prevTranscript: any) => {
-        if (update.transcript.length === 0) {
-          return prevTranscript;
-        }
 
-        const newMessage = update.transcript[update.transcript.length - 1];
-        const updatedTranscript = [...prevTranscript];
-
-        if (updatedTranscript.length > 0) {
-          const lastMessage = updatedTranscript[updatedTranscript.length - 1];
-
-          if (lastMessage.role === newMessage.role) {
-            updatedTranscript[updatedTranscript.length - 1] = newMessage;
-          } else {
-            updatedTranscript.push(newMessage);
-          }
-        } else {
-          updatedTranscript.push(newMessage);
-        }
-
-        return updatedTranscript;
-      });
-    });
-
-    retellWebClient.on("metadata", (metadata) => {
+    retellWebClient.on("metadata", () => {
       // Handle metadata if needed
     });
 
-    retellWebClient.on("call_ended", async (e) => {
+    retellWebClient.on("call_ended", async () => {
       console.log("Call has ended. Logging call id: ");
       setIsCalling(false);
+      setCurrentCallId(null);
     });
 
     retellWebClient.on("error", (error) => {
       console.error("An error occurred:", error);
       retellWebClient.stopCall();
-      setIsLoading(false);
     });
 
 
@@ -140,6 +69,9 @@ export default function Home() {
 
   async function startCall() {
     try {
+      // Generate a unique user ID for this session
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const response = await fetch("/api/create-web-call", {
         method: "POST",
         headers: {
@@ -147,6 +79,11 @@ export default function Home() {
         },
         body: JSON.stringify({
           agent_id: "agent_c5ae64152c9091e17243c9bdfc", // Default test agent
+          metadata: {
+            user_id: userId,
+            session_started: new Date().toISOString(),
+            platform: "web",
+          },
         }),
       });
 
@@ -156,14 +93,13 @@ export default function Home() {
 
       const registerCallResponse: RegisterCallResponse = await response.json();
 
-      callId.current = registerCallResponse.call_id;
       console.log("---- FOUND CALL ID ------");
+      setCurrentCallId(registerCallResponse.call_id);
 
       if (registerCallResponse.access_token) {
         await retellWebClient.startCall({
           accessToken: registerCallResponse.access_token,
         });
-        setIsLoading(false); // Call has started, loading is done
       }
 
 
@@ -177,16 +113,17 @@ export default function Home() {
       <VoiceChatSidebar />
       <div className="flex flex-1 min-h-screen items-center justify-center">
 
-        {/* <button
-        onClick={startCall}
-        disabled={isCalling}
-        className="rounded-full bg-blue-500 px-8 py-4 text-white hover:bg-blue-600 disabled:bg-gray-400"
-      >
-        {isCalling ? "Call in Progress..." : "Start Call"}
-      </button> */}
-        <PersonalPage />
+        <button
+          onClick={startCall}
+          disabled={isCalling}
+          className="rounded-full bg-blue-500 px-8 py-4 text-white hover:bg-blue-600 disabled:bg-gray-400"
+        >
+          {isCalling ? "Call in Progress..." : "Start Call"}
+        </button>
+        {activePage === "personal" && <PersonalPage />}
+        {activePage === "education" && <EducationPage />}
+        {activePage === "project" && <ProjectPage />}
       </div>
     </div>
   );
 }
-
