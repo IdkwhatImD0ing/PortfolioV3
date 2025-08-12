@@ -35,8 +35,35 @@ export default function Home() {
     });
 
 
-    retellWebClient.on("metadata", () => {
-      // Handle metadata if needed
+    retellWebClient.on("metadata", (metadata: any) => {
+      console.log("Metadata event received:", metadata);
+
+      // Handle navigation events from backend
+      if (metadata?.type === "navigation") {
+        const page = metadata.page;
+
+        console.log(`Navigating to page: ${page}`);
+
+        // Update the UI based on the page
+        switch (page) {
+          case "personal":
+            setActivePage("personal");
+            break;
+          case "education":
+            setActivePage("education");
+            break;
+          case "project":
+            setActivePage("project");
+            // Handle specific project ID if provided
+            if (metadata.project_id) {
+              console.log(`Project ID: ${metadata.project_id}`);
+              // TODO: Navigate to specific project
+            }
+            break;
+          default:
+            console.log(`Unknown page: ${page}`);
+        }
+      }
     });
 
     retellWebClient.on("call_ended", async () => {
@@ -69,9 +96,6 @@ export default function Home() {
 
   async function startCall() {
     try {
-      // Generate a unique user ID for this session
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
       const response = await fetch("/api/create-web-call", {
         method: "POST",
         headers: {
@@ -80,7 +104,6 @@ export default function Home() {
         body: JSON.stringify({
           agent_id: "agent_c5ae64152c9091e17243c9bdfc", // Default test agent
           metadata: {
-            user_id: userId,
             session_started: new Date().toISOString(),
             platform: "web",
           },

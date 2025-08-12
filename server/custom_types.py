@@ -1,8 +1,5 @@
-from typing import Union
-
-from typing import Any, List, Optional, Literal, Union
+from typing import Any, List, Optional, Literal, Union, Dict
 from pydantic import BaseModel
-from typing import Literal, Dict, Optional
 
 
 # Retell -> Your Server Events
@@ -91,5 +88,10 @@ class ToolCallResultResponse(BaseModel):
     content: str
 
 
+class MetadataResponse(BaseModel):
+    response_type: Literal["metadata"] = "metadata"
+    metadata: Dict[str, Any]
+
+
 # CustomLlmResponse = Union[ConfigResponse | PingPongResponse | ResponseResponse]
-CustomLlmResponse = Union[ConfigResponse, PingPongResponse, ResponseResponse]
+CustomLlmResponse = Union[ConfigResponse, PingPongResponse, ResponseResponse, MetadataResponse]
