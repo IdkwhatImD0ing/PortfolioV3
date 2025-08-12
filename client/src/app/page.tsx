@@ -14,9 +14,14 @@ interface RegisterCallResponse {
 
 const retellWebClient = new RetellWebClient();
 
+interface NavigationMeta {
+  type: string;
+  page?: "education" | "project" | "personal";
+  project_id?: string;
+}
+
 export default function Home() {
   const [isCalling, setIsCalling] = useState(false);
-  const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<"education" | "project" | "personal">("personal");
 
   // Initialize the SDK, set up event listeners, and start the call
@@ -35,7 +40,7 @@ export default function Home() {
     });
 
 
-    retellWebClient.on("metadata", (metadata: any) => {
+    retellWebClient.on("metadata", (metadata: { metadata?: NavigationMeta }) => {
       console.log("Metadata event received:", metadata);
 
       // The actual metadata content is in metadata.metadata
@@ -72,7 +77,6 @@ export default function Home() {
     retellWebClient.on("call_ended", async () => {
       console.log("Call has ended. Logging call id: ");
       setIsCalling(false);
-      setCurrentCallId(null);
     });
 
     retellWebClient.on("error", (error) => {
@@ -119,9 +123,6 @@ export default function Home() {
 
       const registerCallResponse: RegisterCallResponse = await response.json();
 
-      console.log("---- FOUND CALL ID ------");
-      setCurrentCallId(registerCallResponse.call_id);
-
       if (registerCallResponse.access_token) {
         await retellWebClient.startCall({
           accessToken: registerCallResponse.access_token,
@@ -134,18 +135,18 @@ export default function Home() {
     }
   }
 
+  function endCall() {
+    retellWebClient.stopCall();
+  }
+
   return (
     <div className="flex h-screen">
-      <VoiceChatSidebar />
+      <VoiceChatSidebar
+        isCalling={isCalling}
+        startCall={startCall}
+        endCall={endCall}
+      />
       <div className="flex flex-1 min-h-screen items-center justify-center">
-
-        <button
-          onClick={startCall}
-          disabled={isCalling}
-          className="rounded-full bg-blue-500 px-8 py-4 text-white hover:bg-blue-600 disabled:bg-gray-400"
-        >
-          {isCalling ? "Call in Progress..." : "Start Call"}
-        </button>
         {activePage === "personal" && <PersonalPage />}
         {activePage === "education" && <EducationPage />}
         {activePage === "project" && <ProjectPage />}
