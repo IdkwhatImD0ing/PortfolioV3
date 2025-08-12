@@ -89,7 +89,7 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             },
             response_id=1,
         )
-        print("Sending initial config to client", config.__dict__)
+        print("Sent initial config", flush=True)
         await websocket.send_json(config.__dict__)
         response_id = 0
 
@@ -103,11 +103,10 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
                 if request_json["interaction_type"] == "call_details":
                     # Send first message to signal ready of server
                     first_event = llm_client.draft_begin_message()
-                    print("Sending first_event:", first_event.__dict__)
+                    print("Sent first_event", flush=True)
                     await websocket.send_json(first_event.__dict__)
                     return
                 if request_json["interaction_type"] == "ping_pong":
-                    print("Responding to ping_pong")
                     await websocket.send_json(
                         {
                             "response_type": "ping_pong",
@@ -116,7 +115,6 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
                     )
                     return
                 if request_json["interaction_type"] == "update_only":
-                    print("Update only received, ignoring")
                     return
                 if (
                     request_json["interaction_type"] == "response_required"
@@ -129,15 +127,11 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
                         transcript=request_json["transcript"],
                     )
                     print(
-                        f"""Received interaction_type={request_json['interaction_type']}, response_id={response_id}, last_transcript={request_json['transcript'][-1]['content']}"""
+                        f"Received {request_json['interaction_type']} response_id={response_id}",
+                        flush=True,
                     )
 
                     async for event in llm_client.draft_response(request):
-                        print(
-                            "Forwarding event to client:",
-                            getattr(event, "response_type", None),
-                            getattr(event, "content", None),
-                        )
                         await websocket.send_json(event.__dict__)
                         if request.response_id < response_id:
                             print(
@@ -151,7 +145,6 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
                 )
 
         async for data in websocket.iter_json():
-            print("Incoming ws message:", data)
             asyncio.create_task(handle_message(data))
 
     except WebSocketDisconnect:

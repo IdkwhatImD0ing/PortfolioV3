@@ -57,9 +57,9 @@ _pretty_windows:
 	@cmd.exe /C "wt new-tab -d \"$(CURDIR)\" powershell -NoExit -Command \"cd server; conda run -n portfoliov3 uvicorn main:app --reload\" ; split-pane -H -d \"$(CURDIR)\" powershell -NoExit -Command \"cd client; pnpm dev\""
 
 _pretty_tmux:
-    @echo "Launching side-by-side logs in tmux (server | client)..."
-    @tmux new-session -d -s portfoliov3 "cd server && conda run -n portfoliov3 uvicorn main:app --reload"
-    @tmux split-window -h "cd client && pnpm dev"
-    @tmux select-layout even-horizontal
-    @tmux set -g mouse on >/dev/null 2>&1 || true
-    @tmux attach-session -t portfoliov3
+	@echo "Launching side-by-side logs in tmux (server | client)..."
+	@tmux new-session -d -s portfoliov3 "cd server && conda run -n portfoliov3 uvicorn main:app --reload"
+	@tmux split-window -h "cd client && pnpm dev"
+	@tmux select-layout even-horizontal
+	@tmux set -g mouse on >/dev/null 2>&1 || true
+	@tmux attach-session -t portfoliov3
