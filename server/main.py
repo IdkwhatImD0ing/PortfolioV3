@@ -1,6 +1,7 @@
 import json
 import os
 import asyncio
+import traceback
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -73,8 +74,11 @@ async def handle_webhook(request: Request):
 @app.websocket("/llm-websocket/{call_id}")
 async def websocket_handler(websocket: WebSocket, call_id: str):
     try:
+        print(f"Attempting to accept websocket for call_id={call_id}")
         await websocket.accept()
-        llm_client = LlmClient()
+        print("WebSocket accepted", call_id)
+        llm_client = LlmClient(call_id)
+        call_metadata = None  # Will store metadata from call_details
 
         # Send optional config to Retell server
         config = ConfigResponse(
@@ -85,47 +89,60 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
             },
             response_id=1,
         )
+        print("Sent initial config", flush=True)
         await websocket.send_json(config.__dict__)
         response_id = 0
 
         async def handle_message(request_json):
-            nonlocal response_id
-            nonlocal llm_client
-            # There are 5 types of interaction_type: call_details, pingpong, update_only, response_required, and reminder_required.
-            # Not all of them need to be handled, only response_required and reminder_required.
-            if request_json["interaction_type"] == "call_details":
-                # Send first message to signal ready of server
-                first_event = llm_client.draft_begin_message()
-                await websocket.send_json(first_event.__dict__)
-                return
-            if request_json["interaction_type"] == "ping_pong":
-                await websocket.send_json(
-                    {
-                        "response_type": "ping_pong",
-                        "timestamp": request_json["timestamp"],
-                    }
-                )
-                return
-            if request_json["interaction_type"] == "update_only":
-                return
-            if (
-                request_json["interaction_type"] == "response_required"
-                or request_json["interaction_type"] == "reminder_required"
-            ):
-                response_id = request_json["response_id"]
-                request = ResponseRequiredRequest(
-                    interaction_type=request_json["interaction_type"],
-                    response_id=response_id,
-                    transcript=request_json["transcript"],
-                )
-                print(
-                    f"""Received interaction_type={request_json['interaction_type']}, response_id={response_id}, last_transcript={request_json['transcript'][-1]['content']}"""
-                )
+            try:
+                nonlocal response_id
+                nonlocal llm_client
+                # There are 5 types of interaction_type: call_details, pingpong, update_only, response_required, and reminder_required.
+                # Not all of them need to be handled, only response_required and reminder_required.
+                print("handle_message received:", request_json.get("interaction_type"))
+                if request_json["interaction_type"] == "call_details":
+                    # Send first message to signal ready of server
+                    first_event = llm_client.draft_begin_message()
+                    print("Sent first_event", flush=True)
+                    await websocket.send_json(first_event.__dict__)
+                    return
+                if request_json["interaction_type"] == "ping_pong":
+                    await websocket.send_json(
+                        {
+                            "response_type": "ping_pong",
+                            "timestamp": request_json["timestamp"],
+                        }
+                    )
+                    return
+                if request_json["interaction_type"] == "update_only":
+                    return
+                if (
+                    request_json["interaction_type"] == "response_required"
+                    or request_json["interaction_type"] == "reminder_required"
+                ):
+                    response_id = request_json["response_id"]
+                    request = ResponseRequiredRequest(
+                        interaction_type=request_json["interaction_type"],
+                        response_id=response_id,
+                        transcript=request_json["transcript"],
+                    )
+                    print(
+                        f"Received {request_json['interaction_type']} response_id={response_id}",
+                        flush=True,
+                    )
 
-                async for event in llm_client.draft_response(request):
-                    await websocket.send_json(event.__dict__)
-                    if request.response_id < response_id:
-                        break  # new response needed, abandon this one
+                    async for event in llm_client.draft_response(request):
+                        await websocket.send_json(event.__dict__)
+                        if request.response_id < response_id:
+                            print(
+                                "Detected newer response_id, abandoning current stream"
+                            )
+                            break  # new response needed, abandon this one
+            except Exception as e:
+                print(
+                    f"Exception in handle_message: {e}\n{traceback.format_exc()}\nPayload: {request_json}",
+                    flush=True,
+                )
 
         async for data in websocket.iter_json():
             asyncio.create_task(handle_message(data))
@@ -139,48 +156,3 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
         await websocket.close(1011, "Server error")
     finally:
         print(f"LLM WebSocket connection closed for {call_id}")
-
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, client_id: Optional[str] = None):
-    if client_id is None:
-        client_id = websocket.query_params.get("client_id")
-
-    if client_id is None:
-        await websocket.close(code=4001)
-        return
-    # save this client into server memory
-    await manager.connect(websocket, client_id)
-    try:
-        while True:
-            data = await websocket.receive_json()
-            event = data["event"]
-            print(event)
-            if event == "get_db":
-                # Retrieve all calls from the database
-                db = get_db()
-                message = {
-                    "event": "db_response",
-                    "data": db,
-                }
-                # Send the calls data back to the client
-                await manager.send_personal_message(
-                    message,
-                    websocket,
-                )
-            if event == "get_calls":
-                calls = get_all_calls()
-                message = {"event": "calls_response", "data": calls}
-                await manager.send_personal_message(message, websocket)
-            if event == "get_all_dbs":
-                db = get_db()
-                calls = get_all_calls()
-                message = {"event": "combined_response", "calls": calls, "db": db}
-                await manager.send_personal_message(message, websocket)
-
-    except WebSocketDisconnect:
-        print("Disconnecting...", client_id)
-        await manager.disconnect(client_id)
-    except Exception as e:
-        print("Error:", str(e))
-        await manager.disconnect(client_id)
