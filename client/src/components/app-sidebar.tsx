@@ -12,8 +12,17 @@ interface Message {
   content: string
 }
 
-export function VoiceChatSidebar() {
-  const [isCallActive, setIsCallActive] = useState(false)
+interface VoiceChatSidebarProps {
+  isCalling: boolean
+  startCall: () => void
+  endCall: () => void
+}
+
+export function VoiceChatSidebar({
+  isCalling,
+  startCall,
+  endCall,
+}: VoiceChatSidebarProps) {
   const [isPaused, setIsPaused] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [waveformValues, setWaveformValues] = useState<number[]>(Array(10).fill(2))
@@ -22,18 +31,18 @@ export function VoiceChatSidebar() {
   useEffect(() => {
     let interval: NodeJS.Timeout
 
-    if (isCallActive && !isPaused) {
+    if (isCalling && !isPaused) {
       interval = setInterval(() => {
         setWaveformValues((prev) => prev.map(() => Math.floor(Math.random() * 15) + 2))
       }, 150)
     }
 
     return () => clearInterval(interval)
-  }, [isCallActive, isPaused])
+  }, [isCalling, isPaused])
 
   const toggleCall = () => {
-    if (!isCallActive) {
-      setIsCallActive(true)
+    if (!isCalling) {
+      startCall()
       setIsPaused(false)
       setMessages([
         { type: "ai", content: "Hello! I'm your AI voice assistant. How can I help you explore my portfolio today?" },
@@ -43,8 +52,8 @@ export function VoiceChatSidebar() {
     }
   }
 
-  const endCall = () => {
-    setIsCallActive(false)
+  const handleEndCall = () => {
+    endCall()
     setIsPaused(false)
     // Optionally, you can clear the messages here if you want to reset the transcript
     // setMessages([])
@@ -64,8 +73,8 @@ export function VoiceChatSidebar() {
             className="rounded-full border-2 border-primary z-10 relative"
           />
 
-          {/* Voice Activity Indicator */}
-          {isCallActive && !isPaused && (
+      {/* Voice Activity Indicator */}
+      {isCalling && !isPaused && (
             <motion.div
               className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-primary rounded-full p-1 z-20"
               animate={{ scale: [1, 1.2, 1] }}
@@ -81,7 +90,7 @@ export function VoiceChatSidebar() {
       </div>
 
       {/* Voice Activity Visualization */}
-      {isCallActive && !isPaused && (
+      {isCalling && !isPaused && (
         <div className="px-6 py-2">
           <div className="flex items-center justify-center h-8 gap-[2px]">
             {waveformValues.map((value, index) => (
@@ -135,7 +144,7 @@ export function VoiceChatSidebar() {
 
       {/* Microphone Controls */}
       <div className="p-4 border-t border-border">
-        {!isCallActive ? (
+        {!isCalling ? (
           <Button
             onClick={toggleCall}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-xl transition-all duration-300 hover:shadow-glow"
@@ -160,7 +169,7 @@ export function VoiceChatSidebar() {
               )}
             </Button>
             <Button
-              onClick={endCall}
+              onClick={handleEndCall}
               variant="destructive"
               className="w-full bg-destructive/20 hover:bg-destructive/30 text-destructive hover:text-destructive-foreground border border-destructive/50"
             >
