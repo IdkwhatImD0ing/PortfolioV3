@@ -38,9 +38,12 @@ export default function Home() {
     retellWebClient.on("metadata", (metadata: any) => {
       console.log("Metadata event received:", metadata);
 
+      // The actual metadata content is in metadata.metadata
+      const meta = metadata?.metadata;
+
       // Handle navigation events from backend
-      if (metadata?.type === "navigation") {
-        const page = metadata.page;
+      if (meta?.type === "navigation") {
+        const page = meta.page;
 
         console.log(`Navigating to page: ${page}`);
 
@@ -55,8 +58,8 @@ export default function Home() {
           case "project":
             setActivePage("project");
             // Handle specific project ID if provided
-            if (metadata.project_id) {
-              console.log(`Project ID: ${metadata.project_id}`);
+            if (meta.project_id) {
+              console.log(`Project ID: ${meta.project_id}`);
               // TODO: Navigate to specific project
             }
             break;
