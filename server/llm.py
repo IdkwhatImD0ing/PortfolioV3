@@ -1,6 +1,7 @@
 from openai import AsyncOpenAI
 from typing import List, Dict, Any
 import os
+import traceback
 from custom_types import (
     ResponseRequiredRequest,
     ResponseResponse,
@@ -141,6 +142,10 @@ class LlmClient:
 
         prompt = self.prepare_prompt(request)
         func_calls = {}
+        print(
+            f"draft_response: call_id={self.call_id} model=gpt-4o-mini messages={len(prompt)} last_user='{(request.transcript[-1].content if request.transcript else '')[:120]}'",
+            flush=True,
+        )
         # stream = await self.client.chat.completions.create(
         #     model="gpt-5-mini",
         #     messages=prompt,
@@ -149,22 +154,50 @@ class LlmClient:
         #     verbosity="low",
         #     tools=self.prepare_functions(),
         # )
-        print(prompt)
-        print(self.prepare_functions())
-        stream = await self.client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=prompt,
-            stream=True,
-            temperature=0.7,
-            tools=self.prepare_functions(),
-        )
+
+        try:
+            stream = await self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=prompt,
+                stream=True,
+                temperature=0.7,
+                tools=self.prepare_functions(),
+            )
+            print(f"OpenAI stream started: {stream}", flush=True)
+        except Exception as e:
+            print(
+                f"Error creating OpenAI stream: {e}\n{traceback.format_exc()}",
+                flush=True,
+            )
+            yield ResponseResponse(
+                response_id=request.response_id,
+                content="",
+                content_complete=True,
+                end_call=False,
+            )
+            return
+
         tool_calls_detected = False
+        chunk_index = 0
+        total_text_chars = 0
         async for chunk in stream:
-            print(chunk, flush=True)
+            chunk_index += 1
             if not chunk.choices:
+                print(f"chunk[{chunk_index}] has no choices", flush=True)
                 continue
 
-            delta = chunk.choices[0].delta
+            choice = chunk.choices[0]
+            delta = choice.delta
+            finish = choice.finish_reason
+
+            content_len = len(delta.content or "")
+            tool_calls_len = sum(
+                len((tc.function.arguments or "")) for tc in (delta.tool_calls or [])
+            )
+            print(
+                f"chunk[{chunk_index}] finish={finish} content_len={content_len} tool_calls={bool(delta.tool_calls)} tool_calls_args_len={tool_calls_len}",
+                flush=True,
+            )
 
             # Accumulate function call parts.
             if delta.tool_calls:
@@ -180,6 +213,7 @@ class LlmClient:
 
             # Yield text content if no tool calls detected.
             if delta.content and not tool_calls_detected:
+                total_text_chars += len(delta.content)
                 yield ResponseResponse(
                     response_id=request.response_id,
                     content=delta.content,
@@ -187,22 +221,29 @@ class LlmClient:
                     end_call=False,
                 )
 
-            if not func_calls:
+            # If we reached the end of the streamed message
+            if finish in ("stop", "tool_calls"):
+                print(
+                    f"stream finish detected at chunk[{chunk_index}] with finish={finish}",
+                    flush=True,
+                )
                 break
 
-            # Process each tool call.
-            new_messages = []
+        print(
+            f"stream complete: chunks={chunk_index} total_text_chars={total_text_chars} tool_calls_detected={tool_calls_detected}",
+            flush=True,
+        )
+
+        # Process tool calls after stream completes if any were detected
+        if tool_calls_detected and func_calls:
             for idx in sorted(func_calls.keys()):
                 fc = func_calls[idx]
-                new_messages.append(
-                    {"role": "assistant", "tool_calls": [fc], "content": ""}
-                )
                 try:
                     args = json.loads(fc.function.arguments)
                 except Exception:
                     args = {}
 
-                print("Processing function call:", fc.function.name)
+                print(f"Processing function call: {fc.function.name}", flush=True)
                 yield ToolCallInvocationResponse(
                     tool_call_id=fc.id,
                     name=fc.function.name,
@@ -211,7 +252,7 @@ class LlmClient:
 
                 if fc.function.name == "end_call":
                     message = args.get("message", "")
-                    print("end_call:", message)
+                    print(f"end_call: {message}", flush=True)
                     yield ResponseResponse(
                         response_id=request.response_id,
                         content=message,
@@ -235,25 +276,6 @@ class LlmClient:
                     yield MetadataResponse(
                         metadata={"type": "navigation", "page": "project"},
                     )
-                elif fc.function.name == "updateStatus":
-                    status = args.get("status")
-                    notes = args.get("notes")
-                    output = f"Traveler status updated to: {status}. Notes: {notes}"
-                    print("Output:", output)
-                    print(self.trip_details)
-                    await set_status(
-                        self.trip_details.get("id"),
-                        status,
-                    )
-                    new_messages.append(
-                        {"role": "tool", "tool_call_id": fc.id, "content": output}
-                    )
-                    yield ToolCallResultResponse(
-                        tool_call_id=fc.id,
-                        content=output,
-                    )
-
-            prompt.extend(new_messages)
 
         # Send final response with "content_complete" set to True to signal completion
         response = ResponseResponse(
@@ -261,5 +283,9 @@ class LlmClient:
             content="",
             content_complete=True,
             end_call=False,
+        )
+        print(
+            f"finalizing response_id={request.response_id} content_complete=True end_call=False",
+            flush=True,
         )
         yield response
