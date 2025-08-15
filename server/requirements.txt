@@ -13,7 +13,7 @@ jaraco.collections==5.1.0
 jinja2==3.1.6
 langchainhub==0.1.16
 miniaudio==1.59
-openai-agents==0.2.3
+openai-agents==0.2.7
 opencv-python==4.9.0.80
 orjson==3.11.1
 pip-chill==1.0.3
