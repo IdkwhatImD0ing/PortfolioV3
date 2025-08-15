@@ -20,9 +20,16 @@ interface NavigationMeta {
   project_id?: string;
 }
 
+interface TranscriptEntry {
+  role: "agent" | "user";
+  content: string;
+}
+
 export default function Home() {
   const [isCalling, setIsCalling] = useState(false);
   const [activePage, setActivePage] = useState<"education" | "project" | "personal">("personal");
+  const [fullTranscript, setFullTranscript] = useState<TranscriptEntry[]>([]);
+  const [isAgentTalking, setIsAgentTalking] = useState(false);
 
   // Initialize the SDK, set up event listeners, and start the call
   useEffect(() => {
@@ -33,10 +40,62 @@ export default function Home() {
 
     retellWebClient.on("agent_start_talking", () => {
       console.log("Agent started talking");
+      setIsAgentTalking(true);
     });
 
     retellWebClient.on("agent_stop_talking", () => {
       console.log("Agent stopped talking");
+      setIsAgentTalking(false);
+    });
+
+    // Update message such as transcript
+    // You can get transcript with update.transcript
+    // Please note that transcript only contains last 5 sentences to avoid the payload being too large
+    retellWebClient.on("update", (update: { transcript?: TranscriptEntry[] }) => {
+      console.log(update);
+      
+      if (update.transcript && update.transcript.length > 0) {
+        setFullTranscript(prevTranscript => {
+          const newTranscript = update.transcript || [];
+          
+          // If we have no previous transcript, just use the new entries
+          if (prevTranscript.length === 0) {
+            return newTranscript;
+          }
+          
+          // The update contains the most recent messages (up to 5)
+          // We need to merge this with our existing transcript
+          
+          // Strategy: 
+          // 1. Keep all old messages that are not in the new update
+          // 2. Replace/update any messages that are in both
+          // 3. Add any completely new messages
+          
+          // Calculate how many old messages to keep (those not covered by the update)
+          const numOldToKeep = Math.max(0, prevTranscript.length - newTranscript.length);
+          const keptOldMessages = prevTranscript.slice(0, numOldToKeep);
+          
+          // Now merge the new transcript
+          // The new transcript might have updated versions of the last few messages
+          const mergedTranscript = [...keptOldMessages];
+          
+          // Add all messages from the new transcript
+          // These represent the most recent state of the last N messages
+          newTranscript.forEach((newEntry, index) => {
+            const correspondingOldIndex = numOldToKeep + index;
+            
+            if (correspondingOldIndex < prevTranscript.length) {
+              // This position had an old message - use the new one as it might be more complete
+              mergedTranscript.push(newEntry);
+            } else {
+              // This is a completely new message
+              mergedTranscript.push(newEntry);
+            }
+          });
+          
+          return mergedTranscript;
+        });
+      }
     });
 
 
@@ -77,6 +136,9 @@ export default function Home() {
     retellWebClient.on("call_ended", async () => {
       console.log("Call has ended. Logging call id: ");
       setIsCalling(false);
+      setIsAgentTalking(false);
+      // Clear transcript when call ends
+      setFullTranscript([]);
     });
 
     retellWebClient.on("error", (error) => {
@@ -145,6 +207,8 @@ export default function Home() {
         isCalling={isCalling}
         startCall={startCall}
         endCall={endCall}
+        transcript={fullTranscript}
+        isAgentTalking={isAgentTalking}
       />
       <div className="flex flex-1 min-h-screen items-center justify-center">
         {activePage === "personal" && <PersonalPage />}

@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { motion, AnimatePresence } from "motion/react"
 
-interface Message {
-  type: "ai" | "user"
+interface TranscriptEntry {
+  role: "agent" | "user"
   content: string
 }
 
@@ -16,16 +16,20 @@ interface VoiceChatSidebarProps {
   isCalling: boolean
   startCall: () => void
   endCall: () => void
+  transcript: TranscriptEntry[]
+  isAgentTalking: boolean
 }
 
 export function VoiceChatSidebar({
   isCalling,
   startCall,
   endCall,
+  transcript,
+  isAgentTalking,
 }: VoiceChatSidebarProps) {
   const [isPaused, setIsPaused] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
   const [waveformValues, setWaveformValues] = useState<number[]>(Array(10).fill(2))
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   // Simulate waveform animation when call is active and not paused
   useEffect(() => {
@@ -40,13 +44,20 @@ export function VoiceChatSidebar({
     return () => clearInterval(interval)
   }, [isCalling, isPaused])
 
+  // Auto-scroll to bottom when transcript updates
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight
+      }
+    }
+  }, [transcript])
+
   const toggleCall = () => {
     if (!isCalling) {
       startCall()
       setIsPaused(false)
-      setMessages([
-        { type: "ai", content: "Hello! I'm your AI voice assistant. How can I help you explore my portfolio today?" },
-      ])
     } else {
       setIsPaused(!isPaused)
     }
@@ -55,16 +66,43 @@ export function VoiceChatSidebar({
   const handleEndCall = () => {
     endCall()
     setIsPaused(false)
-    // Optionally, you can clear the messages here if you want to reset the transcript
-    // setMessages([])
   }
 
   return (
     <div className="flex flex-col h-screen w-72 bg-sidebar border-r border-border">
       {/* Profile Section */}
       <div className="p-6 flex flex-col items-center">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full glow-effect"></div>
+        <motion.div 
+          className="relative"
+          animate={isAgentTalking ? {
+            scale: [1, 1.05, 1],
+          } : {
+            scale: 1
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: isAgentTalking ? Infinity : 0,
+            ease: "easeInOut"
+          }}
+        >
+          {/* Glow effect when agent is talking */}
+          <motion.div 
+            className="absolute inset-0 rounded-full"
+            animate={isAgentTalking ? {
+              boxShadow: [
+                "0 0 20px rgba(var(--primary-rgb), 0.3)",
+                "0 0 40px rgba(var(--primary-rgb), 0.6)",
+                "0 0 20px rgba(var(--primary-rgb), 0.3)",
+              ]
+            } : {
+              boxShadow: "0 0 0px rgba(var(--primary-rgb), 0)"
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: isAgentTalking ? Infinity : 0,
+              ease: "easeInOut"
+            }}
+          />
           <Image
             src="/profile.webp"
             alt="Portfolio Owner"
@@ -73,17 +111,19 @@ export function VoiceChatSidebar({
             className="rounded-full border-2 border-primary z-10 relative"
           />
 
-      {/* Voice Activity Indicator */}
-      {isCalling && !isPaused && (
+          {/* Voice Activity Indicator */}
+          {isAgentTalking && (
             <motion.div
               className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-primary rounded-full p-1 z-20"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Number.POSITIVE_INFINITY, duration: 2 }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
               <Waveform size={20} className="text-background" />
             </motion.div>
           )}
-        </div>
+        </motion.div>
 
         <h2 className="text-foreground font-medium mt-4 text-lg">AI Voice Assistant</h2>
         <p className="text-sm text-muted-foreground">Ask about my projects & experience</p>
@@ -107,31 +147,37 @@ export function VoiceChatSidebar({
       )}
 
       {/* Transcript */}
-      <ScrollArea className="flex-grow px-4 py-2 transcript-container">
+      <ScrollArea ref={scrollAreaRef} className="flex-grow px-4 py-2 transcript-container">
         <div className="space-y-4">
           <AnimatePresence>
-            {messages.map((message, index) => (
+            {transcript.map((entry, index) => (
               <motion.div
-                key={index}
+                key={`${entry.role}-${index}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className={`flex items-start space-x-2 ${message.type === "ai" ? "justify-start" : "justify-end"}`}
+                className={`flex items-start space-x-2 ${entry.role === "agent" ? "justify-start" : "justify-end"}`}
               >
-                {message.type === "ai" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-card flex items-center justify-center">
-                    <Waveform size={16} className="text-primary" />
+                {entry.role === "agent" && (
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+                    <Image
+                      src="/profile.webp"
+                      alt="Bill"
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 )}
                 <div
-                  className={`p-3 rounded-lg max-w-[80%] ${message.type === "ai"
+                  className={`p-3 rounded-lg max-w-[80%] ${entry.role === "agent"
                     ? "bg-card text-card-foreground border border-border"
                     : "bg-primary text-primary-foreground"
                     }`}
                 >
-                  {message.content}
+                  {entry.content}
                 </div>
-                {message.type === "user" && (
+                {entry.role === "user" && (
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                     <User size={16} className="text-secondary-foreground" />
                   </div>

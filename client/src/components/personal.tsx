@@ -111,7 +111,7 @@ export default function PersonalPage() {
                   </div>
                   <div className="flex justify-between items-center border-b border-border/30 pb-2">
                     <span className="text-sm font-light">LOCATION</span>
-                    <span className="font-medium">Los Angeles, CA</span>
+                    <span className="font-medium">San Francisco, CA</span>
                   </div>
                   <div className="flex justify-between items-center pb-2">
                     <span className="text-sm font-light">UNIVERSITY</span>
@@ -139,7 +139,7 @@ export default function PersonalPage() {
                   <div className="pl-4 border-l border-primary/30">
                     <p className="text-foreground/90 leading-relaxed">
                       Currently working as an <span className="text-primary font-medium">AI Engineer</span> at
-                      RingCentral, focused on building conversational AI.
+                      <span className="text-primary font-medium">Scale AI</span>, focused on applied AI in enterprise. Previously at RingCentral, focused on building conversational AI.
                     </p>
                   </div>
                 </motion.div>
@@ -155,8 +155,10 @@ export default function PersonalPage() {
                       <span className="text-primary font-medium"> Artificial Intelligence</span>. Currently pursuing my
                       degree at USC, I&apos;m deeply interested in the field of
                       <span className="text-primary font-medium"> conversational AI</span> and its potential to
-                      revolutionize human-computer interaction. My work at RingCentral allows me to apply my knowledge
-                      and skills to real-world problems, creating innovative solutions in the AI space.
+                      revolutionize human-computer interaction. My work at Scale AI allows me to apply my knowledge
+                      and skills to real-world problems, creating innovative solutions in the AI space. Previously, I worked at RingCentral on conversational AI.
+                      <br /><br />
+                      Outside of work, I love cooking—especially trying out new kinds of foods. I also enjoy playing instruments, particularly piano and drumset, and I produce and mix my own music that I release online.
                     </p>
                   </div>
                 </motion.div>
