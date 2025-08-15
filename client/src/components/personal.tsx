@@ -139,7 +139,7 @@ export default function PersonalPage() {
                   <div className="pl-4 border-l border-primary/30">
                     <p className="text-foreground/90 leading-relaxed">
                       Currently working as an <span className="text-primary font-medium">AI Engineer</span> at
-                      <span className="text-primary font-medium"> Scale AI</span>, focused on applied AI in enterprise. Previously at RingCentral, focused on building conversational AI.
+                      <span className="text-primary font-medium">Scale AI</span>, focused on applied AI in enterprise. Previously at RingCentral, focused on building conversational AI.
                     </p>
                   </div>
                 </motion.div>
