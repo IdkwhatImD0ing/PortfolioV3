@@ -49,7 +49,7 @@ export default function Home() {
     });
 
     // Update message such as transcript
-    // You can get transcrit with update.transcript
+    // You can get transcript with update.transcript
     // Please note that transcript only contains last 5 sentences to avoid the payload being too large
     retellWebClient.on("update", (update: { transcript?: TranscriptEntry[] }) => {
       console.log(update);
