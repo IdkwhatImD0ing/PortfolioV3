@@ -8,8 +8,6 @@ from openai import AsyncOpenAI
 from agents import (
     Agent,
     OpenAIResponsesModel,
-    RawResponsesStreamEvent,
-    RunItemStreamEvent,
     Runner,
     function_tool as tool,
 )
@@ -137,6 +135,7 @@ class LlmClient:
         return [display_education_page, display_homepage, display_project]
 
     async def draft_response(self, request: ResponseRequiredRequest):
+        """Fully async version using Runner.run() without streaming."""
         prompt = self.prepare_prompt(request)
         # Remove the system message; Agent already has instructions
         messages = [m for m in prompt if m.get("role") != "system"]
@@ -152,11 +151,61 @@ class LlmClient:
             messages = [{"role": "user", "content": "Hello"}]
 
         try:
-            # Runner.run_streamed returns a RunResultStreaming object synchronously
-            result = Runner.run_streamed(self.agent, messages)
+            # Use async Runner.run() for fully async execution
+            result = await Runner.run(self.agent, messages)
+            
+            # Process the result
+            # Check if any tools were called
+            for item in result.new_items:
+                if hasattr(item, 'raw_item'):
+                    raw_item = item.raw_item
+                    
+                    # Handle tool calls
+                    if hasattr(raw_item, 'type') and raw_item.type == 'function':
+                        # Yield tool invocation
+                        yield ToolCallInvocationResponse(
+                            tool_call_id=getattr(raw_item, 'id', ''),
+                            name=getattr(raw_item.function, 'name', ''),
+                            arguments=getattr(raw_item.function, 'arguments', ''),
+                        )
+                        
+                        # Yield metadata based on tool name
+                        tool_name = getattr(raw_item.function, 'name', '')
+                        if tool_name == "display_homepage":
+                            yield MetadataResponse(
+                                metadata={"type": "navigation", "page": "personal"}
+                            )
+                        elif tool_name == "display_education_page":
+                            yield MetadataResponse(
+                                metadata={"type": "navigation", "page": "education"}
+                            )
+                        elif tool_name == "display_project":
+                            yield MetadataResponse(
+                                metadata={"type": "navigation", "page": "project"}
+                            )
+                        
+                        # The tool result is already in final_output for non-streaming
+                        yield ToolCallResultResponse(
+                            tool_call_id=getattr(raw_item, 'id', ''),
+                            content="Tool executed successfully",
+                        )
+            
+            # Yield the final response
+            yield ResponseResponse(
+                response_id=response_id,
+                content=str(result.final_output) if result.final_output else "",
+                content_complete=True,
+                end_call=False,
+            )
+            
+            self._log(
+                f"finalizing response_id={response_id} content_complete=True end_call=False",
+                flush=True,
+            )
+            
         except Exception as e:
             print(
-                f"Error creating agent stream: {e}\n{traceback.format_exc()}",
+                f"Error in agent execution: {e}\n{traceback.format_exc()}",
                 flush=True,
             )
             yield ResponseResponse(
@@ -165,63 +214,3 @@ class LlmClient:
                 content_complete=True,
                 end_call=False,
             )
-            return
-
-        async for event in result.stream_events():
-            if isinstance(event, RawResponsesStreamEvent):
-                data = event.data
-                if getattr(data, "type", "") == "response.output_text.delta":
-                    yield ResponseResponse(
-                        response_id=response_id,
-                        content=getattr(data, "delta", ""),
-                        content_complete=False,
-                        end_call=False,
-                    )
-
-            elif isinstance(event, RunItemStreamEvent):
-                if event.name == "tool_called":
-                    tool_call = event.item.raw_item
-                    call_id = getattr(
-                        tool_call, "call_id", getattr(tool_call, "id", "")
-                    )
-                    name = getattr(tool_call, "name", "")
-                    args = getattr(tool_call, "arguments", "") or ""
-
-                    yield ToolCallInvocationResponse(
-                        tool_call_id=call_id,
-                        name=name,
-                        arguments=args,
-                    )
-
-                    if name == "display_homepage":
-                        yield MetadataResponse(
-                            metadata={"type": "navigation", "page": "personal"}
-                        )
-                    elif name == "display_education_page":
-                        yield MetadataResponse(
-                            metadata={"type": "navigation", "page": "education"}
-                        )
-                    elif name == "display_project":
-                        yield MetadataResponse(
-                            metadata={"type": "navigation", "page": "project"}
-                        )
-
-                elif event.name == "tool_output":
-                    output_item = event.item
-                    call_id = getattr(output_item.raw_item, "call_id", "")
-                    yield ToolCallResultResponse(
-                        tool_call_id=call_id,
-                        content=str(output_item.output),
-                    )
-
-        # Send final response to signal completion
-        yield ResponseResponse(
-            response_id=response_id,
-            content="",
-            content_complete=True,
-            end_call=False,
-        )
-        self._log(
-            f"finalizing response_id={response_id} content_complete=True end_call=False",
-            flush=True,
-        )
