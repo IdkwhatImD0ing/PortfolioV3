@@ -4,11 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a portfolio website with voice interaction capabilities, built as a full-stack application:
+This is an AI-powered voice persona system that creates a realistic voice clone of Bill Zhang for interactive portfolio conversations. The application allows users to have natural, real-time voice conversations with an AI that embodies Bill's personality, knowledge, and experiences.
 
-- **Frontend**: Next.js 15 with TypeScript, React 19, and TailwindCSS
-- **Backend**: FastAPI Python server with Retell voice AI integration
-- **3D Graphics**: React Three Fiber with Drei and Rapier physics
+### Core Concept
+- **Voice Clone Technology**: Uses Retell AI to create a natural-sounding voice clone that speaks as Bill Zhang
+- **Persona AI**: An LLM configured with Bill's background, personality traits, communication style, and project knowledge
+- **Interactive Portfolio**: Users can ask questions about education, projects, skills, and experiences through voice conversation
+- **Natural Conversation Flow**: The AI maintains Bill's characteristic speaking style - direct, sarcastic, and engaging
+
+### Technical Stack
+- **Frontend**: Next.js 15 with TypeScript, React 19, and TailwindCSS for the web interface
+- **Backend**: FastAPI Python server handling voice AI orchestration and persona management
+- **Voice AI**: Retell platform for real-time voice synthesis and WebRTC communication
+- **3D Graphics**: React Three Fiber with Drei and Rapier physics for visual portfolio elements
 
 ## Development Commands
 

@@ -28,7 +28,7 @@ interface TranscriptEntry {
 
 export default function Home() {
   const [isCalling, setIsCalling] = useState(false);
-  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal">("project");
+  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal">("landing");
   const [fullTranscript, setFullTranscript] = useState<TranscriptEntry[]>([]);
   const [isAgentTalking, setIsAgentTalking] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
@@ -54,7 +54,6 @@ export default function Home() {
     // You can get transcript with update.transcript
     // Please note that transcript only contains last 5 sentences to avoid the payload being too large
     retellWebClient.on("update", (update: { transcript?: TranscriptEntry[] }) => {
-      console.log(update);
 
       if (update.transcript && update.transcript.length > 0) {
         setFullTranscript(prevTranscript => {
@@ -142,8 +141,7 @@ export default function Home() {
       console.log("Call has ended. Logging call id: ");
       setIsCalling(false);
       setIsAgentTalking(false);
-      // Clear transcript when call ends
-      setFullTranscript([]);
+      // Don't clear transcript here - only clear when starting a new conversation
     });
 
     retellWebClient.on("error", (error) => {
@@ -170,6 +168,9 @@ export default function Home() {
 
   async function startCall() {
     try {
+      // Clear transcript when starting a new conversation
+      setFullTranscript([]);
+      
       const response = await fetch("/api/create-web-call", {
         method: "POST",
         headers: {
