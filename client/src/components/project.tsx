@@ -4,25 +4,84 @@ import { useEffect, useState } from "react"
 import { motion } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Github, LinkIcon, ArrowLeft } from "lucide-react"
+import { Github, LinkIcon, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
-const project = {
-  name: "Counsely",
-  description:
-    "Counsely is a novel assistant tool offering real-time AI-driven insights and post-session performance evaluations for therapists. It enhances therapeutic sessions with on-the-spot conclusions and suggestions, while its post-session dashboard provides therapists with a deeper understanding of client concerns, facilitating a more effective therapy process.",
-  code: "Q56mbQdtSnk",
-  techStack: ["NextJS", "Material UI", "Socket.io", "Firebase", "FastAPI", "OpenAI", "Whisper"],
-  link: "https://counsely.art3m1s.me/dashboard",
-  github: "https://github.com/kaeladair/sbhacks24",
+interface Project {
+  id: string
+  name: string
+  summary: string
+  details: string
+  github: string | null
+  demo: string  // Can be either a YouTube URL or an image path
 }
 
-export default function ProjectPage() {
+interface ProjectPageProps {
+  projectId?: string
+}
+
+export default function ProjectPage({ projectId }: ProjectPageProps) {
   const [isLoaded, setIsLoaded] = useState(false)
+  const [currentProjectIndex, setCurrentProjectIndex] = useState(0)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  
+  // Fetch projects data from public directory
+  useEffect(() => {
+    fetch('/mock.json')
+      .then(res => res.json())
+      .then(data => {
+        setProjects(data)
+        setLoading(false)
+        // If projectId is provided, find and set the index
+        if (projectId) {
+          const index = data.findIndex((p: Project) => p.id === projectId)
+          if (index !== -1) {
+            setCurrentProjectIndex(index)
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load projects:', err)
+        setLoading(false)
+      })
+  }, [])
+  
+  // Update project when projectId changes
+  useEffect(() => {
+    if (projectId && projects.length > 0) {
+      const index = projects.findIndex(p => p.id === projectId)
+      if (index !== -1) {
+        setCurrentProjectIndex(index)
+      }
+    }
+  }, [projectId, projects])
+  
+  const currentProject = projects[currentProjectIndex]
 
   useEffect(() => {
     setIsLoaded(true)
   }, [])
+  
+  // Helper function to extract YouTube video ID from URL
+  const getYouTubeVideoId = (url: string): string | null => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
+    return match ? match[1] : null
+  }
+  
+  // Check if demo is a video URL or image
+  const isVideo = currentProject?.demo?.includes('youtube.com') || currentProject?.demo?.includes('youtu.be')
+  const videoId = isVideo && currentProject?.demo ? getYouTubeVideoId(currentProject.demo) : null
+  
+  // Navigation functions
+  const goToPreviousProject = () => {
+    setCurrentProjectIndex((prev) => (prev - 1 + projects.length) % projects.length)
+  }
+  
+  const goToNextProject = () => {
+    setCurrentProjectIndex((prev) => (prev + 1) % projects.length)
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -42,6 +101,14 @@ export default function ProjectPage() {
       opacity: 1,
       transition: { type: "spring", stiffness: 100 },
     },
+  }
+
+  if (loading || projects.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0A0A0A" }}>
+        <p style={{ color: "#E6E6F1" }}>Loading projects...</p>
+      </div>
+    )
   }
 
   return (
@@ -65,25 +132,67 @@ export default function ProjectPage() {
           </Button>
         </Link>
         <h1 className="text-4xl font-bold" style={{ color: "#A259FF" }}>
-          {project.name}
+          {currentProject?.name}
         </h1>
       </motion.div>
 
       <div className="flex flex-col lg:flex-row gap-8 flex-grow">
         <motion.div className="w-full lg:w-1/2" variants={itemVariants}>
-          <div
-            className="relative w-full overflow-hidden rounded-xl"
-            style={{
-              paddingBottom: "56.25%",
-              boxShadow: "0 0 20px rgba(162, 89, 255, 0.3)", // Glow using --primary
-            }}
-          >
-            <iframe
-              src={`https://www.youtube.com/embed/${project.code}`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="absolute top-0 left-0 w-full h-full"
-            ></iframe>
+          <div className="relative">
+            {/* Navigation buttons */}
+            <div className="absolute top-1/2 -translate-y-1/2 -left-12 z-10">
+              <Button
+                onClick={goToPreviousProject}
+                variant="ghost"
+                size="icon"
+                className="rounded-full hover:bg-[#1A1A2E] hover:text-[#A259FF] transition-all duration-300"
+                style={{ color: "#E6E6F1" }}
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+            </div>
+            <div className="absolute top-1/2 -translate-y-1/2 -right-12 z-10">
+              <Button
+                onClick={goToNextProject}
+                variant="ghost"
+                size="icon"
+                className="rounded-full hover:bg-[#1A1A2E] hover:text-[#A259FF] transition-all duration-300"
+                style={{ color: "#E6E6F1" }}
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </div>
+            
+            {/* Demo content - either video or image */}
+            <div
+              className="relative w-full overflow-hidden rounded-xl"
+              style={{
+                paddingBottom: isVideo ? "56.25%" : "0",
+                boxShadow: "0 0 20px rgba(162, 89, 255, 0.3)",
+              }}
+            >
+              {isVideo && videoId ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${videoId}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute top-0 left-0 w-full h-full"
+                ></iframe>
+              ) : currentProject?.demo ? (
+                <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
+                  <Image
+                    src={currentProject.demo}
+                    alt={currentProject.name}
+                    fill
+                    className="object-cover rounded-xl"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64 bg-[#1A1A2E] rounded-xl">
+                  <p style={{ color: "#E6E6F1" }}>No demo available</p>
+                </div>
+              )}
+            </div>
           </div>
         </motion.div>
 
@@ -99,91 +208,77 @@ export default function ProjectPage() {
             <CardContent className="p-6 flex flex-col h-full">
               <motion.h2
                 className="text-3xl font-semibold mb-4"
-                style={{ color: "#A259FF" }} // --primary
+                style={{ color: "#A259FF" }}
                 variants={itemVariants}
               >
-                About the Project
+                {currentProject?.name}
               </motion.h2>
 
-              <motion.p
-                className="mb-6 leading-relaxed"
-                style={{ color: "#E6E6F1" }} // --foreground
-                variants={itemVariants}
-              >
-                {project.description}
-              </motion.p>
+              <motion.div className="space-y-6" variants={itemVariants}>
+                {/* Summary Section */}
+                <div>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
+                    Summary
+                  </h3>
+                  <p className="leading-relaxed text-sm" style={{ color: "#B8B8C4" }}>
+                    {currentProject?.summary}
+                  </p>
+                </div>
 
-              <motion.h3
-                className="text-xl font-semibold mb-3"
-                style={{ color: "#E6E6F1" }} // --foreground
-                variants={itemVariants}
-              >
-                Tech Stack
-              </motion.h3>
-
-              <motion.div className="flex flex-wrap gap-2 mb-6" variants={itemVariants}>
-                {project.techStack.map((tech, index) => (
-                  <motion.span
-                    key={tech}
-                    className="px-3 py-1 rounded-full text-sm"
-                    style={{
-                      background: "#1A1A2E", // --popover
-                      color: "#E6E6F1", // --foreground
-                      border: "1px solid #2A2A3B", // --border
-                      boxShadow: "0 0 10px rgba(162, 89, 255, 0.15)", // Subtle glow
-                    }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5 + index * 0.1 }}
-                    whileHover={{
-                      scale: 1.05,
-                      backgroundColor: "#A259FF", // --primary
-                      color: "#FFFFFF", // --primary-foreground
-                      transition: { duration: 0.2 },
-                    }}
-                  >
-                    {tech}
-                  </motion.span>
-                ))}
+                {/* Details Section */}
+                <div>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
+                    Details
+                  </h3>
+                  <div className="space-y-4">
+                    {currentProject?.details.split('\n\n').map((section, index) => {
+                      const [title, ...content] = section.split('\n')
+                      return (
+                        <div key={index}>
+                          <h4 className="font-medium mb-2" style={{ color: "#A259FF" }}>
+                            {title}
+                          </h4>
+                          <p className="text-sm leading-relaxed" style={{ color: "#B8B8C4" }}>
+                            {content.join('\n').replace(/^- /gm, '• ')}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </motion.div>
 
-              <motion.div className="flex gap-4 mt-auto" variants={itemVariants}>
-                {project.link && (
-                  <a href={project.link} target="_blank" rel="noopener noreferrer">
+              <motion.div className="flex gap-4 mt-6 pt-6 border-t border-[#2A2A3B]" variants={itemVariants}>
+                {currentProject?.github && (
+                  <a href={currentProject.github} target="_blank" rel="noopener noreferrer">
                     <Button
                       className="flex items-center gap-2 transition-all duration-300"
                       style={{
                         background: "transparent",
-                        border: "1px solid #A259FF", // --primary
-                        color: "#E6E6F1", // --foreground
-                      }}
-                      whileHover={{
-                        boxShadow: "0 0 10px rgba(162, 89, 255, 0.5)",
-                        backgroundColor: "rgba(162, 89, 255, 0.1)",
+                        border: "1px solid #A259FF",
+                        color: "#E6E6F1",
                       }}
                     >
-                      <LinkIcon size={18} />
-                      Live Demo
+                      <Github size={18} />
+                      GitHub
                     </Button>
                   </a>
                 )}
-                <a href={project.github} target="_blank" rel="noopener noreferrer">
-                  <Button
-                    className="flex items-center gap-2 transition-all duration-300"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #A259FF", // --primary
-                      color: "#E6E6F1", // --foreground
-                    }}
-                    whileHover={{
-                      boxShadow: "0 0 10px rgba(162, 89, 255, 0.5)",
-                      backgroundColor: "rgba(162, 89, 255, 0.1)",
-                    }}
-                  >
-                    <Github size={18} />
-                    GitHub
-                  </Button>
-                </a>
+                {isVideo && currentProject?.demo && (
+                  <a href={currentProject.demo} target="_blank" rel="noopener noreferrer">
+                    <Button
+                      className="flex items-center gap-2 transition-all duration-300"
+                      style={{
+                        background: "transparent",
+                        border: "1px solid #A259FF",
+                        color: "#E6E6F1",
+                      }}
+                    >
+                      <LinkIcon size={18} />
+                      Watch Full Demo
+                    </Button>
+                  </a>
+                )}
               </motion.div>
             </CardContent>
           </Card>
@@ -192,4 +287,3 @@ export default function ProjectPage() {
     </motion.div>
   )
 }
-

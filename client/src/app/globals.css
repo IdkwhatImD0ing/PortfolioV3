@@ -25,6 +25,9 @@ body {
     --secondary: #7f5af0; /* Secondary interactive purple */
     --secondary-foreground: #ffffff;
 
+    --muted: #2a2a3b;
+    --muted-foreground: #9ca3af;
+
     --accent: #b18aff; /* Lavender-glow accent for hover/focus */
     --accent-foreground: #ffffff;
 
@@ -43,30 +46,22 @@ body {
     --chart-3: #b18aff;
     --chart-4: #353545;
     --chart-5: #e6e6f1;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  .dark {
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Sidebar colors */
+    --sidebar: #161622;
+    --sidebar-foreground: #e6e6f1;
+    --sidebar-primary: #a259ff;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #2a2a3b;
+    --sidebar-accent-foreground: #e6e6f1;
+    --sidebar-border: #2a2a3b;
+    --sidebar-ring: #a259ff;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
@@ -127,4 +122,13 @@ body {
 
 .pulse-animation {
   animation: pulse 2s infinite ease-in-out;
+}
+
+/* Custom glow effects for the futuristic theme */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(162, 89, 255, 0.3);
+}
+
+.glow-accent {
+  box-shadow: 0 0 15px rgba(177, 138, 255, 0.2);
 }

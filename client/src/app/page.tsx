@@ -3,6 +3,7 @@
 import EducationPage from "@/components/education";
 import PersonalPage from "@/components/personal";
 import ProjectPage from "@/components/project";
+import LandingPage from "@/components/LandingPage";
 import { useEffect, useState } from "react";
 import { RetellWebClient } from "retell-client-js-sdk";
 import { VoiceChatSidebar } from "@/components/app-sidebar";
@@ -16,7 +17,7 @@ const retellWebClient = new RetellWebClient();
 
 interface NavigationMeta {
   type: string;
-  page?: "education" | "project" | "personal";
+  page?: "landing" | "education" | "project" | "personal";
   project_id?: string;
 }
 
@@ -27,9 +28,10 @@ interface TranscriptEntry {
 
 export default function Home() {
   const [isCalling, setIsCalling] = useState(false);
-  const [activePage, setActivePage] = useState<"education" | "project" | "personal">("personal");
+  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal">("landing");
   const [fullTranscript, setFullTranscript] = useState<TranscriptEntry[]>([]);
   const [isAgentTalking, setIsAgentTalking] = useState(false);
+  const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
 
   // Initialize the SDK, set up event listeners, and start the call
   useEffect(() => {
@@ -113,6 +115,9 @@ export default function Home() {
 
         // Update the UI based on the page
         switch (page) {
+          case "landing":
+            setActivePage("landing");
+            break;
           case "personal":
             setActivePage("personal");
             break;
@@ -124,7 +129,7 @@ export default function Home() {
             // Handle specific project ID if provided
             if (meta.project_id) {
               console.log(`Project ID: ${meta.project_id}`);
-              // TODO: Navigate to specific project
+              setCurrentProjectId(meta.project_id);
             }
             break;
           default:
@@ -211,9 +216,10 @@ export default function Home() {
         isAgentTalking={isAgentTalking}
       />
       <div className="flex flex-1 min-h-screen items-center justify-center">
+        {activePage === "landing" && <LandingPage />}
         {activePage === "personal" && <PersonalPage />}
         {activePage === "education" && <EducationPage />}
-        {activePage === "project" && <ProjectPage />}
+        {activePage === "project" && <ProjectPage projectId={currentProjectId} />}
       </div>
     </div>
   );

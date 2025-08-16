@@ -1,4 +1,5 @@
 import os
+import json
 import traceback
 from typing import Any, List
 
@@ -27,6 +28,7 @@ from custom_types import (
 )
 
 from prompts import begin_sentence, system_prompt
+from project_search import search_projects as search_projects_impl
 
 
 # Define the output model for the guardrail check
@@ -47,6 +49,8 @@ guardrail_agent = Agent(
     - Conversations about Bill's hackathon wins, work experience, or personal interests
     - Greetings and friendly conversation related to Bill's portfolio
     - Questions about Bill's technical skills, programming languages, or projects like SlugLoop
+    - Requests to search for specific types of projects (AI, web development, hackathons, etc.)
+    - Questions about technologies used in Bill's projects
     
     NOT ALLOWED topics (is_jailbreak = true):
     - Treating the system as a generic assistant (e.g., "write me a poem", "help me with my homework")
@@ -62,9 +66,7 @@ guardrail_agent = Agent(
 
 @input_guardrail
 async def security_guardrail(
-    ctx: RunContextWrapper[None], 
-    agent: Agent, 
-    input: str | list[TResponseInputItem]
+    ctx: RunContextWrapper[None], agent: Agent, input: str | list[TResponseInputItem]
 ) -> GuardrailFunctionOutput:
     """Guardrail to check if user input is attempting to jailbreak the system."""
     # For streaming compatibility, we'll only check the latest user message
@@ -78,25 +80,39 @@ async def security_guardrail(
             if isinstance(item, dict) and item.get("role") == "user":
                 content = item.get("content", "")
                 break
-    
+
     # Quick checks for obviously allowed content
-    bill_keywords = ["bill", "zhang", "project", "education", "homepage", "hackathon", 
-                     "slugloop", "portfolio", "experience", "skills", "work"]
+    bill_keywords = [
+        "bill",
+        "zhang",
+        "project",
+        "education",
+        "homepage",
+        "hackathon",
+        "slugloop",
+        "portfolio",
+        "experience",
+        "skills",
+        "work",
+    ]
     content_lower = content.lower()
-    
+
     # If it mentions Bill or portfolio-related keywords, it's likely allowed
     if any(keyword in content_lower for keyword in bill_keywords):
         return GuardrailFunctionOutput(
-            output_info={"is_jailbreak": False, "reasoning": "Request is about portfolio-related topics"},
+            output_info={
+                "is_jailbreak": False,
+                "reasoning": "Request is about portfolio-related topics",
+            },
             tripwire_triggered=False,
         )
-    
+
     # Run the guardrail agent for more complex checks
     result = await Runner.run(guardrail_agent, input, context=ctx.context)
-    
+
     # Get the structured output
     output = result.final_output_as(JailbreakCheckOutput)
-    
+
     return GuardrailFunctionOutput(
         output_info=output,
         tripwire_triggered=output.is_jailbreak,  # Trigger if it IS a jailbreak attempt
@@ -111,20 +127,66 @@ def display_education_page() -> str:
 
 @tool
 def display_homepage() -> str:
-    """Displays the homepage on the frontend."""
-    return "Successfully displayed the homepage"
+    """Displays Bill's personal homepage on the frontend."""
+    return "Successfully displayed the personal homepage"
 
 
 @tool
-def display_project() -> str:
-    """Displays a projects page on the frontend."""
-    return "Successfully displayed the project page"
+def display_landing_page() -> str:
+    """Displays the landing page on the frontend - the initial voice-driven portfolio page."""
+    return "Successfully displayed the landing page"
+
+
+@tool
+def display_project(id: str) -> str:
+    """
+    Displays a specific project on the frontend.
+
+    Args:
+        id: The unique project ID to display (e.g. "interviewgpt", "getitdone", "assignmenttracker")
+
+    Returns:
+        Confirmation message that the project was displayed
+    """
+    return f"Successfully displayed project: {id}"
+
+
+@tool
+def search_projects(query: str) -> str:
+    """
+    Search for Bill Zhang's projects based on a query.
+    Use this when users ask about specific types of projects, technologies, or want to know what Bill has worked on.
+
+    Args:
+        query: Description of what kind of projects to search for (e.g. "AI projects", "hackathon winners", "web development")
+
+    Returns:
+        String description of the matching projects with id, name, and details only
+    """
+    try:
+        results = search_projects_impl(query, top_k=3)
+
+        if not results:
+            return "No projects found matching that query."
+
+        response = f"Found {len(results)} relevant projects:\n\n"
+
+        for i, project in enumerate(results, 1):
+            response += f"{i}. Project ID: {project['id']}\n"
+            response += f"   Name: {project['name']}\n"
+            response += f"   Details: {project['details']}\n"
+            response += "\n"
+
+        return response.strip()
+
+    except Exception as e:
+        return f"Error searching projects: {str(e)}"
 
 
 class LlmClient:
     def __init__(self, call_id: str, debug=None):
         self.call_id = call_id
-        
+
         # Create the main agent with input guardrails
         self.agent = Agent(
             name="portfolio_agent",
@@ -133,7 +195,7 @@ class LlmClient:
             tools=self.prepare_functions(),
             input_guardrails=[security_guardrail],  # Pass the function directly
         )
-        
+
         # Control verbose streaming logs via env or constructor
         if debug is None:
             self.debug = os.getenv("LLM_DEBUG", "0") == "1"
@@ -172,6 +234,21 @@ class LlmClient:
         for message in transcript_messages:
             prompt.append(message)
 
+        last_user_message = ""
+        last_user_message_index = -1
+        for i, message in enumerate(reversed(transcript_messages)):
+            if message.get("role") == "user":
+                last_user_message = message.get("content", "")
+                last_user_message_index = len(transcript_messages) - i - 1
+                break
+
+        if last_user_message:
+            last_user_message = (
+                f"User question:{last_user_message}\n\n"
+                "Always respond in a conversational style without any markdown or formatting."
+            )
+            prompt[last_user_message_index]["content"] = last_user_message
+
         if request.interaction_type == "reminder_required":
             prompt.append(
                 {
@@ -183,7 +260,13 @@ class LlmClient:
 
     def prepare_functions(self) -> List[Any]:
         """Return tool functions available to the agent."""
-        return [display_education_page, display_homepage, display_project]
+        return [
+            display_education_page,
+            display_homepage,
+            display_landing_page,
+            display_project,
+            search_projects,
+        ]
 
     async def draft_response(self, request: ResponseRequiredRequest):
         prompt = self.prepare_prompt(request)
@@ -204,7 +287,7 @@ class LlmClient:
             # Runner.run_streamed returns a RunResultStreaming object synchronously
             # The guardrails will be checked automatically before the agent runs
             result = Runner.run_streamed(self.agent, messages)
-            
+
             async for event in result.stream_events():
                 if isinstance(event, RawResponsesStreamEvent):
                     data = event.data
@@ -235,14 +318,34 @@ class LlmClient:
                             yield MetadataResponse(
                                 metadata={"type": "navigation", "page": "personal"}
                             )
+                        elif name == "display_landing_page":
+                            yield MetadataResponse(
+                                metadata={"type": "navigation", "page": "landing"}
+                            )
                         elif name == "display_education_page":
                             yield MetadataResponse(
                                 metadata={"type": "navigation", "page": "education"}
                             )
                         elif name == "display_project":
-                            yield MetadataResponse(
-                                metadata={"type": "navigation", "page": "project"}
-                            )
+                            # Parse the arguments to get the project ID
+                            try:
+                                args_dict = json.loads(args) if args else {}
+                                project_id = args_dict.get("id", "")
+                                yield MetadataResponse(
+                                    metadata={
+                                        "type": "navigation",
+                                        "page": "project",
+                                        "project_id": project_id,
+                                    }
+                                )
+                            except:
+                                yield MetadataResponse(
+                                    metadata={"type": "navigation", "page": "project"}
+                                )
+                        elif name == "search_projects":
+                            # For search_projects, we might want to send the results as metadata
+                            # but since the function returns text, we'll let it be handled normally
+                            pass
 
                     elif event.name == "tool_output":
                         output_item = event.item
@@ -263,7 +366,7 @@ class LlmClient:
                     end_call=False,
                 )
                 return
-            
+
             print(
                 f"Error creating agent stream: {e}\n{traceback.format_exc()}",
                 flush=True,

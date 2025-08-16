@@ -22,6 +22,7 @@ from custom_types import (
     Utterance,
     ToolCallInvocationResponse,
     ToolCallResultResponse,
+    MetadataResponse,
 )
 from llm import LlmClient
 from dotenv import load_dotenv
@@ -206,6 +207,215 @@ async def test_conversation_flow(client: LlmClient):
     return True
 
 
+async def test_project_search(client: LlmClient):
+    """Test project search functionality."""
+    print(f"\n{Colors.CYAN}=== Testing Project Search ==={Colors.END}")
+    
+    search_queries = [
+        "Show me AI projects",
+        "What hackathon projects have you won with?",
+        "Find me some web development projects",
+        "Tell me about your machine learning work"
+    ]
+    
+    for query in search_queries:
+        print(f"\n{Colors.YELLOW}Testing search: '{query}'{Colors.END}")
+        
+        request = ResponseRequiredRequest(
+            interaction_type="response_required",
+            response_id=300,
+            transcript=[Utterance(role="user", content=query)]
+        )
+        
+        search_tool_called = False
+        message_parts = []
+        tool_arguments = None
+        
+        async for response in client.draft_response(request):
+            if isinstance(response, ResponseResponse) and response.content:
+                message_parts.append(response.content)
+            
+            elif isinstance(response, ToolCallInvocationResponse):
+                if response.name == "search_projects":
+                    search_tool_called = True
+                    tool_arguments = response.arguments
+                    print(f"   {Colors.GREEN}[OK] search_projects called{Colors.END}")
+                    # Try to parse the arguments
+                    try:
+                        import json
+                        args = json.loads(tool_arguments)
+                        print(f"   Search query: {Colors.CYAN}{args.get('query', 'N/A')}{Colors.END}")
+                    except:
+                        print(f"   Arguments: {tool_arguments}")
+            
+            elif isinstance(response, ToolCallResultResponse):
+                # Show first 150 chars of results
+                result_preview = response.content[:150] if response.content else "No results"
+                print(f"   Results preview: {Colors.MAGENTA}{result_preview}...{Colors.END}")
+        
+        if message_parts:
+            full_message = "".join(message_parts)
+            print(f"   Response excerpt: {Colors.GREEN}{full_message[:100]}...{Colors.END}")
+        
+        if not search_tool_called:
+            print(f"   {Colors.YELLOW}[Note] search_projects was not called (may have used other approach){Colors.END}")
+    
+    return True
+
+
+async def test_display_project_with_id(client: LlmClient):
+    """Test display_project functionality with specific IDs."""
+    print(f"\n{Colors.CYAN}=== Testing Display Project with ID ==={Colors.END}")
+    
+    test_cases = [
+        ("Show me the InterviewGPT project", "interviewgpt"),
+        ("Display the GetItDone project", "getitdone"),
+        ("Can you show me AssignmentTracker?", "assignmenttracker"),
+    ]
+    
+    for prompt, expected_id in test_cases:
+        print(f"\n{Colors.YELLOW}Testing: '{prompt}'{Colors.END}")
+        print(f"   Expected project ID: {Colors.CYAN}{expected_id}{Colors.END}")
+        
+        request = ResponseRequiredRequest(
+            interaction_type="response_required",
+            response_id=400,
+            transcript=[Utterance(role="user", content=prompt)]
+        )
+        
+        display_called = False
+        project_id_sent = None
+        metadata_received = False
+        
+        async for response in client.draft_response(request):
+            if isinstance(response, ToolCallInvocationResponse):
+                if response.name == "display_project":
+                    display_called = True
+                    print(f"   {Colors.GREEN}[OK] display_project called{Colors.END}")
+                    # Parse arguments to get project ID
+                    try:
+                        import json
+                        args = json.loads(response.arguments)
+                        project_id_sent = args.get("id", "")
+                        print(f"   Project ID sent: {Colors.CYAN}{project_id_sent}{Colors.END}")
+                        
+                        if project_id_sent.lower() == expected_id.lower():
+                            print(f"   {Colors.GREEN}[OK] Correct project ID!{Colors.END}")
+                        else:
+                            print(f"   {Colors.YELLOW}[WARN] Different ID than expected{Colors.END}")
+                    except Exception as e:
+                        print(f"   {Colors.RED}Error parsing arguments: {e}{Colors.END}")
+            
+            elif isinstance(response, MetadataResponse):
+                metadata_received = True
+                if response.metadata.get("type") == "navigation":
+                    page = response.metadata.get("page")
+                    proj_id = response.metadata.get("project_id", "")
+                    print(f"   {Colors.GREEN}[OK] Metadata sent - Page: {page}, Project ID: {proj_id}{Colors.END}")
+        
+        if not display_called:
+            print(f"   {Colors.RED}[FAIL] display_project was not called{Colors.END}")
+        
+        if not metadata_received:
+            print(f"   {Colors.YELLOW}[Note] No metadata response received{Colors.END}")
+    
+    return True
+
+
+async def test_search_and_display_flow(client: LlmClient):
+    """Test the complete flow of searching for projects then displaying one."""
+    print(f"\n{Colors.CYAN}=== Testing Search and Display Flow ==={Colors.END}")
+    
+    # Multi-step conversation
+    conversation = [
+        Utterance(role="user", content="What AI projects have you worked on?"),
+    ]
+    
+    print(f"{Colors.YELLOW}Step 1: Search for AI projects{Colors.END}")
+    print(f"User: {Colors.BLUE}{conversation[0].content}{Colors.END}")
+    
+    request = ResponseRequiredRequest(
+        interaction_type="response_required",
+        response_id=500,
+        transcript=conversation
+    )
+    
+    search_called = False
+    projects_found = []
+    agent_response = ""
+    
+    print(f"Bill: ", end="", flush=True)
+    async for response in client.draft_response(request):
+        if isinstance(response, ResponseResponse) and response.content:
+            agent_response += response.content
+            print(f"{Colors.GREEN}{response.content}{Colors.END}", end="", flush=True)
+        
+        elif isinstance(response, ToolCallInvocationResponse):
+            if response.name == "search_projects":
+                search_called = True
+                print(f"\n{Colors.CYAN}[Tool: search_projects]{Colors.END}", end="")
+        
+        elif isinstance(response, ToolCallResultResponse):
+            # Extract project names from results if possible
+            if "InterviewGPT" in response.content:
+                projects_found.append("interviewgpt")
+            if "GetItDone" in response.content:
+                projects_found.append("getitdone")
+            print(f" -> Found {len(projects_found)} projects")
+    
+    print(f"\n\n{Colors.YELLOW}Step 2: Request to see a specific project{Colors.END}")
+    
+    # Add the agent's response to conversation
+    conversation.append(Utterance(role="agent", content=agent_response))
+    
+    # User asks to see a specific project
+    if projects_found:
+        user_request = f"Show me more about the first project you mentioned"
+    else:
+        user_request = "Can you display the InterviewGPT project?"
+    
+    conversation.append(Utterance(role="user", content=user_request))
+    print(f"User: {Colors.BLUE}{user_request}{Colors.END}")
+    
+    request2 = ResponseRequiredRequest(
+        interaction_type="response_required",
+        response_id=501,
+        transcript=conversation
+    )
+    
+    display_called = False
+    project_displayed = None
+    
+    print(f"Bill: ", end="", flush=True)
+    async for response in client.draft_response(request2):
+        if isinstance(response, ResponseResponse) and response.content:
+            print(f"{Colors.GREEN}{response.content}{Colors.END}", end="", flush=True)
+        
+        elif isinstance(response, ToolCallInvocationResponse):
+            if response.name == "display_project":
+                display_called = True
+                try:
+                    import json
+                    args = json.loads(response.arguments)
+                    project_displayed = args.get("id", "")
+                    print(f"\n{Colors.CYAN}[Tool: display_project(id='{project_displayed}')]{Colors.END}")
+                except:
+                    print(f"\n{Colors.CYAN}[Tool: display_project]{Colors.END}")
+        
+        elif isinstance(response, MetadataResponse):
+            if response.metadata.get("type") == "navigation":
+                print(f" -> Frontend navigation triggered")
+    
+    print(f"\n\n{Colors.YELLOW}Flow Summary:{Colors.END}")
+    print(f"   Search called: {Colors.GREEN if search_called else Colors.RED}{'Yes' if search_called else 'No'}{Colors.END}")
+    print(f"   Projects found: {len(projects_found)}")
+    print(f"   Display called: {Colors.GREEN if display_called else Colors.RED}{'Yes' if display_called else 'No'}{Colors.END}")
+    if project_displayed:
+        print(f"   Project displayed: {Colors.CYAN}{project_displayed}{Colors.END}")
+    
+    return True
+
+
 async def test_error_scenarios(client: LlmClient):
     """Test error handling scenarios."""
     print(f"\n{Colors.CYAN}=== Testing Error Scenarios ==={Colors.END}")
@@ -305,6 +515,9 @@ async def main(args):
         ("Basic Functionality", test_basic_functionality),
         ("Simple Chat", test_simple_chat),
         ("Tool Calls", test_tool_calls),
+        ("Project Search", test_project_search),
+        ("Display Project with ID", test_display_project_with_id),
+        ("Search and Display Flow", test_search_and_display_flow),
         ("Conversation Flow", test_conversation_flow),
         ("Error Scenarios", test_error_scenarios),
     ]

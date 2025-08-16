@@ -8,7 +8,10 @@
       "Bash(git commit:*)",
       "Bash(true)",
       "Bash(npm run dev:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(conda activate:*)",
+      "Bash(pip install:*)",
+      "Bash(conda run:*)"
     ],
     "deny": []
   }
