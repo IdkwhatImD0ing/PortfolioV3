@@ -50,10 +50,10 @@ export default function PersonalPage() {
         className="w-full max-w-5xl"
       >
         <motion.div className="relative mb-12 text-center" variants={itemVariants}>
-          <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-2 bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
             <span className="tracking-wider">BILL ZHANG</span>
           </h1>
-          <div className="h-0.5 w-32 bg-gradient-to-r from-primary to-accent mx-auto mt-2 mb-4"></div>
+          <div className="h-0.5 w-32 bg-linear-to-r from-primary to-accent mx-auto mt-2 mb-4"></div>
           <p className="text-xl text-foreground/80">
             <span className="font-light tracking-wide">AI ENGINEER & CS STUDENT</span>
           </p>
@@ -67,14 +67,14 @@ export default function PersonalPage() {
               whileHover="hover"
               className="relative rounded-2xl overflow-hidden bg-card border border-border/50"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-30"></div>
+              <div className="absolute inset-0 bg-linear-to-br from-primary/10 to-transparent opacity-30"></div>
               <div className="p-6 flex flex-col items-center">
                 <motion.div
                   className="relative mb-6 rounded-full overflow-hidden border-2 border-primary/30"
                   whileHover={{ scale: 1.03 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-full"></div>
+                  <div className="absolute inset-0 bg-linear-to-br from-primary/20 to-transparent rounded-full"></div>
                   <Image
                     src="/profile.webp?height=250&width=250"
                     alt="Bill Zhang"
@@ -82,7 +82,7 @@ export default function PersonalPage() {
                     height={220}
                     className="rounded-full"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent rounded-full"></div>
+                  <div className="absolute inset-0 bg-linear-to-tr from-primary/10 to-transparent rounded-full"></div>
                 </motion.div>
 
                 <motion.div className="flex flex-wrap justify-center gap-2 mb-6" variants={itemVariants}>
@@ -129,7 +129,7 @@ export default function PersonalPage() {
               whileHover="hover"
               className="h-full relative rounded-2xl overflow-hidden bg-card border border-border/50"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent opacity-30"></div>
+              <div className="absolute inset-0 bg-linear-to-br from-secondary/10 to-transparent opacity-30"></div>
               <div className="p-8">
                 <motion.div variants={itemVariants} className="mb-8">
                   <div className="flex items-center mb-4">

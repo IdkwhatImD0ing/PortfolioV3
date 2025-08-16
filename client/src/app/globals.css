@@ -1,62 +1,94 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Dark Mode Only – Futuristic Purple Theme */
+  --background: #0a0a0a; /* Deep space black */
+  --foreground: #e6e6f1; /* Soft light lavender-gray for text */
+
+  --card: #161622; /* Slightly lighter than background for elevation */
+  --card-foreground: #e6e6f1;
+
+  --popover: #1a1a2e;
+  --popover-foreground: #e6e6f1;
+
+  --primary: #a259ff; /* Main purple accent – modern, vibrant */
+  --primary-foreground: #ffffff;
+
+  --secondary: #7f5af0; /* Secondary interactive purple */
+  --secondary-foreground: #ffffff;
+
+  --muted: #2a2a3b;
+  --muted-foreground: #9ca3af;
+
+  --accent: #b18aff; /* Lavender-glow accent for hover/focus */
+  --accent-foreground: #ffffff;
+
+  --destructive: #ff4b4b; /* Futuristic red (used sparingly) */
+  --destructive-foreground: #ffffff;
+
+  --border: #2a2a3b; /* Subtle border for structure */
+  --input: #2a2a3b;
+
+  --ring: #a259ff; /* Purple glow ring for focus/interactions */
+  --radius: 0.75rem; /* Slightly rounded, modern feel */
+
+  /* Charting / Visuals */
+  --chart-1: #a259ff;
+  --chart-2: #7f5af0;
+  --chart-3: #b18aff;
+  --chart-4: #353545;
+  --chart-5: #e6e6f1;
+
+  --sidebar: #161622;
+  --sidebar-foreground: #e6e6f1;
+  --sidebar-primary: #a259ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a2a3b;
+  --sidebar-accent-foreground: #e6e6f1;
+  --sidebar-border: #2a2a3b;
+  --sidebar-ring: #a259ff;
 }
 
-@layer base {
-  :root {
-    /* Dark Mode Only – Futuristic Purple Theme */
-    --background: #0a0a0a; /* Deep space black */
-    --foreground: #e6e6f1; /* Soft light lavender-gray for text */
-
-    --card: #161622; /* Slightly lighter than background for elevation */
-    --card-foreground: #e6e6f1;
-
-    --popover: #1a1a2e;
-    --popover-foreground: #e6e6f1;
-
-    --primary: #a259ff; /* Main purple accent – modern, vibrant */
-    --primary-rgb: 162, 89, 255; /* RGB values for primary color */
-    --primary-foreground: #ffffff;
-
-    --secondary: #7f5af0; /* Secondary interactive purple */
-    --secondary-foreground: #ffffff;
-
-    --muted: #2a2a3b;
-    --muted-foreground: #9ca3af;
-
-    --accent: #b18aff; /* Lavender-glow accent for hover/focus */
-    --accent-foreground: #ffffff;
-
-    --destructive: #ff4b4b; /* Futuristic red (used sparingly) */
-    --destructive-foreground: #ffffff;
-
-    --border: #2a2a3b; /* Subtle border for structure */
-    --input: #2a2a3b;
-
-    --ring: #a259ff; /* Purple glow ring for focus/interactions */
-    --radius: 0.75rem; /* Slightly rounded, modern feel */
-
-    /* Charting / Visuals */
-    --chart-1: #a259ff;
-    --chart-2: #7f5af0;
-    --chart-3: #b18aff;
-    --chart-4: #353545;
-    --chart-5: #e6e6f1;
-
-    /* Sidebar colors */
-    --sidebar: #161622;
-    --sidebar-foreground: #e6e6f1;
-    --sidebar-primary: #a259ff;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #2a2a3b;
-    --sidebar-accent-foreground: #e6e6f1;
-    --sidebar-border: #2a2a3b;
-    --sidebar-ring: #a259ff;
-  }
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
@@ -66,62 +98,6 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* Sidebar specific styles */
-.bg-sidebar {
-  background-color: var(--card);
-  backdrop-filter: blur(10px);
-}
-
-/* Glow effects */
-.glow-effect {
-  box-shadow: 0 0 15px 2px var(--primary);
-  opacity: 0.4;
-  filter: blur(8px);
-}
-
-.shadow-glow {
-  box-shadow: 0 0 15px -2px var(--primary);
-}
-
-/* Voice activity visualization */
-.transcript-container {
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary) var(--card);
-}
-
-.transcript-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.transcript-container::-webkit-scrollbar-track {
-  background: var(--card);
-}
-
-.transcript-container::-webkit-scrollbar-thumb {
-  background-color: var(--primary);
-  border-radius: 20px;
-}
-
-/* Animations for voice interaction */
-@keyframes pulse {
-  0% {
-    opacity: 0.4;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.05);
-  }
-  100% {
-    opacity: 0.4;
-    transform: scale(0.95);
-  }
-}
-
-.pulse-animation {
-  animation: pulse 2s infinite ease-in-out;
 }
 
 /* Custom glow effects for the futuristic theme */

@@ -4,8 +4,7 @@ import { useEffect, useState } from "react"
 import { motion } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Github, LinkIcon, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { Github, LinkIcon } from "lucide-react"
 import Image from "next/image"
 
 interface Project {
@@ -26,7 +25,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
   const [currentProjectIndex, setCurrentProjectIndex] = useState(0)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  
+
   // Fetch projects data from public directory
   useEffect(() => {
     fetch('/mock.json')
@@ -47,7 +46,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
         setLoading(false)
       })
   }, [])
-  
+
   // Update project when projectId changes
   useEffect(() => {
     if (projectId && projects.length > 0) {
@@ -57,31 +56,22 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
       }
     }
   }, [projectId, projects])
-  
+
   const currentProject = projects[currentProjectIndex]
 
   useEffect(() => {
     setIsLoaded(true)
   }, [])
-  
+
   // Helper function to extract YouTube video ID from URL
   const getYouTubeVideoId = (url: string): string | null => {
     const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
     return match ? match[1] : null
   }
-  
+
   // Check if demo is a video URL or image
   const isVideo = currentProject?.demo?.includes('youtube.com') || currentProject?.demo?.includes('youtu.be')
   const videoId = isVideo && currentProject?.demo ? getYouTubeVideoId(currentProject.demo) : null
-  
-  // Navigation functions
-  const goToPreviousProject = () => {
-    setCurrentProjectIndex((prev) => (prev - 1 + projects.length) % projects.length)
-  }
-  
-  const goToNextProject = () => {
-    setCurrentProjectIndex((prev) => (prev + 1) % projects.length)
-  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -113,56 +103,21 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col p-4 md:p-8"
+      className="h-screen flex flex-col p-4 md:p-8 overflow-hidden"
       style={{ background: "#0A0A0A" }} // --background
       initial="hidden"
       animate={isLoaded ? "visible" : "hidden"}
       variants={containerVariants}
     >
-      <motion.div className="flex items-center mb-8 gap-4" variants={itemVariants}>
-        <Link href="/projects">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-[#1A1A2E] hover:text-[#A259FF] transition-all duration-300"
-            style={{ color: "#E6E6F1" }}
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="sr-only">Back to projects</span>
-          </Button>
-        </Link>
+      <motion.div className="mb-8 flex-shrink-0" variants={itemVariants}>
         <h1 className="text-4xl font-bold" style={{ color: "#A259FF" }}>
           {currentProject?.name}
         </h1>
       </motion.div>
 
-      <div className="flex flex-col lg:flex-row gap-8 flex-grow">
-        <motion.div className="w-full lg:w-1/2" variants={itemVariants}>
+      <div className="flex flex-col lg:flex-row gap-8 flex-1 min-h-0">
+        <motion.div className="w-full lg:w-1/2 flex items-center justify-center" variants={itemVariants}>
           <div className="relative">
-            {/* Navigation buttons */}
-            <div className="absolute top-1/2 -translate-y-1/2 -left-12 z-10">
-              <Button
-                onClick={goToPreviousProject}
-                variant="ghost"
-                size="icon"
-                className="rounded-full hover:bg-[#1A1A2E] hover:text-[#A259FF] transition-all duration-300"
-                style={{ color: "#E6E6F1" }}
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-            </div>
-            <div className="absolute top-1/2 -translate-y-1/2 -right-12 z-10">
-              <Button
-                onClick={goToNextProject}
-                variant="ghost"
-                size="icon"
-                className="rounded-full hover:bg-[#1A1A2E] hover:text-[#A259FF] transition-all duration-300"
-                style={{ color: "#E6E6F1" }}
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-            </div>
-            
             {/* Demo content - either video or image */}
             <div
               className="relative w-full overflow-hidden rounded-xl"
@@ -196,59 +151,67 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
           </div>
         </motion.div>
 
-        <motion.div className="w-full lg:w-1/2" variants={itemVariants}>
+        <motion.div className="w-full lg:w-1/2 min-h-0" variants={itemVariants}>
           <Card
-            className="h-full overflow-hidden"
+            className="h-full flex flex-col overflow-hidden"
             style={{
               background: "#161622", // --card
               borderColor: "#2A2A3B", // --border
               borderRadius: "0.75rem", // --radius
             }}
           >
-            <CardContent className="p-6 flex flex-col h-full">
-              <motion.h2
-                className="text-3xl font-semibold mb-4"
-                style={{ color: "#A259FF" }}
-                variants={itemVariants}
+            <CardContent className="p-6 flex flex-col flex-1 min-h-0">
+              <div
+                className="flex-1 overflow-y-auto pr-2"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#A259FF #1A1A2E'
+                }}
               >
-                {currentProject?.name}
-              </motion.h2>
+                <motion.h2
+                  className="text-3xl font-semibold mb-4"
+                  style={{ color: "#A259FF" }}
+                  variants={itemVariants}
+                >
+                  {currentProject?.name}
+                </motion.h2>
 
-              <motion.div className="space-y-6" variants={itemVariants}>
-                {/* Summary Section */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
-                    Summary
-                  </h3>
-                  <p className="leading-relaxed text-sm" style={{ color: "#B8B8C4" }}>
-                    {currentProject?.summary}
-                  </p>
-                </div>
-
-                {/* Details Section */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
-                    Details
-                  </h3>
-                  <div className="space-y-4">
-                    {currentProject?.details.split('\n\n').map((section, index) => {
-                      const [title, ...content] = section.split('\n')
-                      return (
-                        <div key={index}>
-                          <h4 className="font-medium mb-2" style={{ color: "#A259FF" }}>
-                            {title}
-                          </h4>
-                          <p className="text-sm leading-relaxed" style={{ color: "#B8B8C4" }}>
-                            {content.join('\n').replace(/^- /gm, '• ')}
-                          </p>
-                        </div>
-                      )
-                    })}
+                <motion.div className="space-y-6" variants={itemVariants}>
+                  {/* Summary Section */}
+                  <div>
+                    <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
+                      Summary
+                    </h3>
+                    <p className="leading-relaxed text-sm" style={{ color: "#B8B8C4" }}>
+                      {currentProject?.summary}
+                    </p>
                   </div>
-                </div>
-              </motion.div>
 
-              <motion.div className="flex gap-4 mt-6 pt-6 border-t border-[#2A2A3B]" variants={itemVariants}>
+                  {/* Details Section */}
+                  <div>
+                    <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
+                      Details
+                    </h3>
+                    <div className="space-y-4">
+                      {currentProject?.details.split('\n\n').map((section, index) => {
+                        const [title, ...content] = section.split('\n')
+                        return (
+                          <div key={index}>
+                            <h4 className="font-medium mb-2" style={{ color: "#A259FF" }}>
+                              {title}
+                            </h4>
+                            <p className="text-sm leading-relaxed" style={{ color: "#B8B8C4" }}>
+                              {content.join('\n').replace(/^- /gm, '• ')}
+                            </p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              <motion.div className="flex gap-4 mt-6 pt-6 border-t border-[#2A2A3B] flex-shrink-0" variants={itemVariants}>
                 {currentProject?.github && (
                   <a href={currentProject.github} target="_blank" rel="noopener noreferrer">
                     <Button
