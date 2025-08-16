@@ -16,7 +16,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8 }}
             className="space-y-2"
           >
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
               Voice-Driven Portfolio
             </h1>
             <p className="text-lg text-muted-foreground">Experience my work through conversation, not clicks</p>
@@ -77,7 +77,7 @@ export default function LandingPage() {
 
             <div className="space-y-2 text-left">
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                   <span className="text-primary font-semibold text-xs">1</span>
                 </div>
                 <div>
@@ -87,7 +87,7 @@ export default function LandingPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                   <span className="text-primary font-semibold text-xs">2</span>
                 </div>
                 <div>
@@ -99,7 +99,7 @@ export default function LandingPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                   <span className="text-primary font-semibold text-xs">3</span>
                 </div>
                 <div>

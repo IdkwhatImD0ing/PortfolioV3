@@ -28,7 +28,7 @@ interface TranscriptEntry {
 
 export default function Home() {
   const [isCalling, setIsCalling] = useState(false);
-  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal">("landing");
+  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal">("project");
   const [fullTranscript, setFullTranscript] = useState<TranscriptEntry[]>([]);
   const [isAgentTalking, setIsAgentTalking] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
@@ -55,37 +55,37 @@ export default function Home() {
     // Please note that transcript only contains last 5 sentences to avoid the payload being too large
     retellWebClient.on("update", (update: { transcript?: TranscriptEntry[] }) => {
       console.log(update);
-      
+
       if (update.transcript && update.transcript.length > 0) {
         setFullTranscript(prevTranscript => {
           const newTranscript = update.transcript || [];
-          
+
           // If we have no previous transcript, just use the new entries
           if (prevTranscript.length === 0) {
             return newTranscript;
           }
-          
+
           // The update contains the most recent messages (up to 5)
           // We need to merge this with our existing transcript
-          
+
           // Strategy: 
           // 1. Keep all old messages that are not in the new update
           // 2. Replace/update any messages that are in both
           // 3. Add any completely new messages
-          
+
           // Calculate how many old messages to keep (those not covered by the update)
           const numOldToKeep = Math.max(0, prevTranscript.length - newTranscript.length);
           const keptOldMessages = prevTranscript.slice(0, numOldToKeep);
-          
+
           // Now merge the new transcript
           // The new transcript might have updated versions of the last few messages
           const mergedTranscript = [...keptOldMessages];
-          
+
           // Add all messages from the new transcript
           // These represent the most recent state of the last N messages
           newTranscript.forEach((newEntry, index) => {
             const correspondingOldIndex = numOldToKeep + index;
-            
+
             if (correspondingOldIndex < prevTranscript.length) {
               // This position had an old message - use the new one as it might be more complete
               mergedTranscript.push(newEntry);
@@ -94,7 +94,7 @@ export default function Home() {
               mergedTranscript.push(newEntry);
             }
           });
-          
+
           return mergedTranscript;
         });
       }

@@ -103,7 +103,7 @@ export default function EducationPage() {
                                         onClick={() => toggleExpand(index)}
                                         whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
                                     >
-                                        <div className="relative mr-6 flex-shrink-0">
+                                        <div className="relative mr-6 shrink-0">
                                             <div
                                                 className="w-16 h-16 rounded-full flex items-center justify-center relative overflow-hidden"
                                                 style={{
@@ -138,7 +138,7 @@ export default function EducationPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex-grow">
+                                        <div className="grow">
                                             <h2 className="text-xl font-semibold text-foreground mb-1">{edu.school}</h2>
                                             <p className="text-primary font-medium mb-1">{edu.degree}</p>
                                             <p className="text-sm text-muted-foreground">{edu.duration}</p>

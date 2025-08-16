@@ -147,7 +147,7 @@ export function VoiceChatSidebar({
       )}
 
       {/* Transcript */}
-      <ScrollArea ref={scrollAreaRef} className="flex-grow px-4 py-2 transcript-container">
+      <ScrollArea ref={scrollAreaRef} className="grow px-4 py-2 transcript-container">
         <div className="space-y-4">
           <AnimatePresence>
             {transcript.map((entry, index) => (
@@ -159,7 +159,7 @@ export function VoiceChatSidebar({
                 className={`flex items-start space-x-2 ${entry.role === "agent" ? "justify-start" : "justify-end"}`}
               >
                 {entry.role === "agent" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+                  <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden border border-primary/20">
                     <Image
                       src="/profile.webp"
                       alt="Bill"
@@ -178,7 +178,7 @@ export function VoiceChatSidebar({
                   {entry.content}
                 </div>
                 {entry.role === "user" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                     <User size={16} className="text-secondary-foreground" />
                   </div>
                 )}
