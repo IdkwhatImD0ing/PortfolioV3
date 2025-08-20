@@ -170,7 +170,7 @@ export default function Home() {
     try {
       // Clear transcript when starting a new conversation
       setFullTranscript([]);
-      
+
       const response = await fetch("/api/create-web-call", {
         method: "POST",
         headers: {
