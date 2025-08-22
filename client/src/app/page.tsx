@@ -170,14 +170,14 @@ export default function Home() {
     try {
       // Clear transcript when starting a new conversation
       setFullTranscript([]);
-      
+
       const response = await fetch("/api/create-web-call", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          agent_id: "agent_c5ae64152c9091e17243c9bdfc", // Default test agent
+          agent_id: process.env.NEXT_PUBLIC_RETELL_AGENT_ID,
           metadata: {
             session_started: new Date().toISOString(),
             platform: "web",

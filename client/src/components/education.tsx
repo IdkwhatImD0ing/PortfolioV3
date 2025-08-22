@@ -11,7 +11,7 @@ const educationData = [
         school: "University of Southern California (USC)",
         degree: "Master's in Computer Science + AI",
         duration: "August 2023 - May 2025",
-        details: "Focusing on advanced topics in Computer Science and Artificial Intelligence.",
+        details: "Graduated with a specialization in Artificial Intelligence, focusing on advanced machine learning and AI applications.",
         logo: "/usc.png?height=64&width=64",
         color: "var(--primary)", // Primary color
     },

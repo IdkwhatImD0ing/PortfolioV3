@@ -34,6 +34,11 @@ app.add_middleware(
 retell = Retell(api_key=os.environ["RETELL_API_KEY"])
 
 
+@app.get("/ping")
+async def ping():
+    return {"message": "pong"}
+
+
 # Handle webhook from Retell server. This is used to receive events from Retell server.
 # Including call_started, call_ended, call_analyzed
 @app.post("/webhook")
@@ -71,7 +76,7 @@ async def handle_webhook(request: Request):
 # Start a websocket server to exchange text input and output with Retell server. Retell server
 # will send over transcriptions and other information. This server here will be responsible for
 # generating responses with LLM and send back to Retell server.
-@app.websocket("/llm-websocket/{call_id}")
+@app.websocket(f"/{os.environ.get('OBFUSCATED_WS_PATH', 'ws-default')}" + "/{call_id}")
 async def websocket_handler(websocket: WebSocket, call_id: str):
     try:
         print(f"Attempting to accept websocket for call_id={call_id}")

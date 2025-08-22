@@ -13,7 +13,7 @@ interface Project {
   summary: string
   details: string
   github: string | null
-  demo: string  // Can be either a YouTube URL or an image path
+  demo: string | null  // Can be either a YouTube URL or an image path
 }
 
 interface ProjectPageProps {
@@ -28,7 +28,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
 
   // Fetch projects data from public directory
   useEffect(() => {
-    fetch('/mock.json')
+    fetch('/data.json')
       .then(res => res.json())
       .then(data => {
         setProjects(data)
@@ -70,8 +70,18 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
   }
 
   // Check if demo is a video URL or image
-  const isVideo = currentProject?.demo?.includes('youtube.com') || currentProject?.demo?.includes('youtu.be')
+  const isVideo = currentProject?.demo && (currentProject.demo.includes('youtube.com') || currentProject.demo.includes('youtu.be'))
   const videoId = isVideo && currentProject?.demo ? getYouTubeVideoId(currentProject.demo) : null
+  
+  // Debug logging
+  useEffect(() => {
+    if (currentProject) {
+      console.log('Current project:', currentProject.name)
+      console.log('Demo URL:', currentProject.demo)
+      console.log('Is Video:', isVideo)
+      console.log('Video ID:', videoId)
+    }
+  }, [currentProject, isVideo, videoId])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -116,38 +126,40 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
       </motion.div>
 
       <div className="flex flex-col lg:flex-row gap-8 flex-1 min-h-0">
-        <motion.div className="w-full lg:w-1/2 flex items-center justify-center" variants={itemVariants}>
-          <div className="relative">
+        <motion.div className="w-full lg:w-1/2 flex items-start justify-center" variants={itemVariants}>
+          <div className="relative w-full">
             {/* Demo content - either video or image */}
-            <div
-              className="relative w-full overflow-hidden rounded-xl"
-              style={{
-                paddingBottom: isVideo ? "56.25%" : "0",
-                boxShadow: "0 0 20px rgba(162, 89, 255, 0.3)",
-              }}
-            >
-              {isVideo && videoId ? (
+            {isVideo && videoId ? (
+              <div
+                className="relative w-full overflow-hidden rounded-xl"
+                style={{
+                  paddingBottom: "56.25%",
+                  boxShadow: "0 0 20px rgba(162, 89, 255, 0.3)",
+                }}
+              >
                 <iframe
                   src={`https://www.youtube.com/embed/${videoId}`}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className="absolute top-0 left-0 w-full h-full"
+                  title={`${currentProject.name} Demo Video`}
                 ></iframe>
-              ) : currentProject?.demo ? (
-                <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
-                  <Image
-                    src={currentProject.demo}
-                    alt={currentProject.name}
-                    fill
-                    className="object-cover rounded-xl"
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-64 bg-[#1A1A2E] rounded-xl">
-                  <p style={{ color: "#E6E6F1" }}>No demo available</p>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : currentProject?.demo ? (
+              <div className="relative w-full rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", boxShadow: "0 0 20px rgba(162, 89, 255, 0.3)" }}>
+                <Image
+                  src={currentProject.demo}
+                  alt={currentProject.name}
+                  fill
+                  className="object-cover"
+                  unoptimized={currentProject.demo.includes('cloudfront.net')}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-64 bg-[#1A1A2E] rounded-xl">
+                <p style={{ color: "#E6E6F1" }}>No demo available</p>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -177,36 +189,44 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
                 </motion.h2>
 
                 <motion.div className="space-y-6" variants={itemVariants}>
-                  {/* Summary Section */}
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
-                      Summary
-                    </h3>
-                    <p className="leading-relaxed text-sm" style={{ color: "#B8B8C4" }}>
-                      {currentProject?.summary}
-                    </p>
-                  </div>
-
                   {/* Details Section */}
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
-                      Details
-                    </h3>
-                    <div className="space-y-4">
-                      {currentProject?.details.split('\n\n').map((section, index) => {
-                        const [title, ...content] = section.split('\n')
-                        return (
-                          <div key={index}>
+                  <div className="space-y-4">
+                    {currentProject?.details.split('\n\n').map((section, index) => {
+                      const lines = section.split('\n')
+                      const title = lines[0]
+                      const content = lines.slice(1).join('\n')
+                      
+                      // Skip empty sections
+                      if (!title && !content) return null
+                      
+                      return (
+                        <div key={index}>
+                          {title && (
                             <h4 className="font-medium mb-2" style={{ color: "#A259FF" }}>
-                              {title}
+                              {title.replace(/:/g, '')}
                             </h4>
-                            <p className="text-sm leading-relaxed" style={{ color: "#B8B8C4" }}>
-                              {content.join('\n').replace(/^- /gm, '• ')}
-                            </p>
-                          </div>
-                        )
-                      })}
-                    </div>
+                          )}
+                          {content && (
+                            <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "#B8B8C4" }}>
+                              {content.split('\n').map((line, lineIndex) => {
+                                // Replace markdown bold with HTML
+                                const processedLine = line
+                                  .replace(/^- /, '• ')
+                                  .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #E6E6F1">$1</strong>')
+                                
+                                return (
+                                  <div 
+                                    key={lineIndex} 
+                                    dangerouslySetInnerHTML={{ __html: processedLine }}
+                                    className="mb-1"
+                                  />
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </motion.div>
               </div>

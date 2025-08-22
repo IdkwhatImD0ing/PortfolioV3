@@ -28,7 +28,7 @@ export default function PersonalPage() {
     visible: {
       y: 0,
       opacity: 1,
-      transition: { type: "spring", stiffness: 100 },
+      transition: { type: "spring" as const, stiffness: 100 },
     },
   }
 
@@ -55,7 +55,7 @@ export default function PersonalPage() {
           </h1>
           <div className="h-0.5 w-32 bg-linear-to-r from-primary to-accent mx-auto mt-2 mb-4"></div>
           <p className="text-xl text-foreground/80">
-            <span className="font-light tracking-wide">AI ENGINEER & CS STUDENT</span>
+            <span className="font-light tracking-wide">AI ENGINEER</span>
           </p>
         </motion.div>
 
@@ -139,7 +139,7 @@ export default function PersonalPage() {
                   <div className="pl-4 border-l border-primary/30">
                     <p className="text-foreground/90 leading-relaxed">
                       Currently working as an <span className="text-primary font-medium">AI Engineer</span> at
-                      <span className="text-primary font-medium">Scale AI</span>, focused on applied AI in enterprise. Previously at RingCentral, focused on building conversational AI.
+                      <span className="text-primary font-medium"> Scale AI</span>, focused on applied AI for enterprise solutions. Previously at RingCentral (June 2023 - June 2025), focused on building conversational AI and QA testing.
                     </p>
                   </div>
                 </motion.div>
@@ -151,36 +151,24 @@ export default function PersonalPage() {
                   </div>
                   <div className="pl-4 border-l border-primary/30">
                     <p className="text-foreground/80 leading-relaxed">
-                      I&apos;m a passionate AI engineer and computer science student specializing in
-                      <span className="text-primary font-medium"> Artificial Intelligence</span>. Currently pursuing my
-                      degree at USC, I&apos;m deeply interested in the field of
+                      I&apos;m a passionate AI engineer with a Master&apos;s degree in Computer Science specializing in
+                      <span className="text-primary font-medium"> Artificial Intelligence</span> from USC (graduated May 2025). I&apos;m deeply interested in the field of
                       <span className="text-primary font-medium"> conversational AI</span> and its potential to
                       revolutionize human-computer interaction. My work at Scale AI allows me to apply my knowledge
-                      and skills to real-world problems, creating innovative solutions in the AI space. Previously, I worked at RingCentral on conversational AI.
+                      and skills to real-world problems, creating innovative solutions in the AI space.
                       <br /><br />
                       Outside of work, I love cooking—especially trying out new kinds of foods. I also enjoy playing instruments, particularly piano and drumset, and I produce and mix my own music that I release online.
                     </p>
                   </div>
                 </motion.div>
 
-                <motion.div className="mt-8 flex justify-end" variants={itemVariants} whileHover={{ scale: 1.03 }}>
-                  <div className="flex items-center text-sm text-foreground/60">
-                    <div className="w-2 h-2 rounded-full bg-primary/70 mr-2 animate-pulse"></div>
-                    <span>Ask me about my work in AI</span>
-                  </div>
-                </motion.div>
+
               </div>
             </motion.div>
           </motion.div>
         </div>
 
-        <motion.div variants={itemVariants} className="mt-6 text-center text-foreground/50 text-sm">
-          <div className="flex items-center justify-center space-x-2">
-            <div className="w-1 h-1 rounded-full bg-primary/50"></div>
-            <span>Voice-activated portfolio experience</span>
-            <div className="w-1 h-1 rounded-full bg-primary/50"></div>
-          </div>
-        </motion.div>
+
       </motion.div>
     </div>
   )

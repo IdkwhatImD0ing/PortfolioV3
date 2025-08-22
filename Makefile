@@ -37,10 +37,10 @@ clean: stop
 # Run services in separate terminal tabs (recommended for clean logs)
 tabs:
 ifeq ($(OS),Windows_NT)
-	@echo "Opening services in separate Windows Terminal tabs..."
-	@wt new-tab --title "FastAPI Server" -d "$(CURDIR)\server" cmd /k "conda activate portfoliov3 && uvicorn main:app --reload"
-	@wt new-tab --title "Next.js Client" -d "$(CURDIR)\client" cmd /k "pnpm dev"
-	@wt new-tab --title "Ngrok Tunnel" -d "$(CURDIR)" cmd /k "ngrok http --url=conversational.ngrok.app 8000"
+	@echo "Opening services in separate PowerShell windows..."
+	@powershell -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$(CURDIR)\server\"; conda activate portfoliov3; uvicorn main:app --reload' -WorkingDirectory '$(CURDIR)\server'"
+	@powershell -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$(CURDIR)\client\"; pnpm dev' -WorkingDirectory '$(CURDIR)\client'"
+	@powershell -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'ngrok http --url=conversational.ngrok.app 8000' -WorkingDirectory '$(CURDIR)'"
 else
 	@echo "Opening services in separate terminal windows..."
 	@gnome-terminal --tab --title="FastAPI Server" -- bash -c "cd server && conda run -n portfoliov3 uvicorn main:app --reload; exec bash" 2>/dev/null || \
@@ -73,12 +73,11 @@ else
 endif
 
 _pretty_windows:
-	@echo "Launching side-by-side logs in Windows Terminal..."
-	@echo "Server (left) | Client (middle) | Ngrok (right)"
-	@wt new-tab --title "Portfolio Dev" -d "$(CURDIR)" ; \
-	split-pane -H -d "$(CURDIR)\server" cmd /k "conda activate portfoliov3 && uvicorn main:app --reload" ; \
-	split-pane -H -d "$(CURDIR)\client" cmd /k "pnpm dev" ; \
-	split-pane -H -d "$(CURDIR)" cmd /k "ngrok http --url=conversational.ngrok.app 8000"
+	@echo "Launching services in separate PowerShell windows..."
+	@echo "Server | Client | Ngrok"
+	@powershell -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$(CURDIR)\server\"; conda activate portfoliov3; uvicorn main:app --reload' -WorkingDirectory '$(CURDIR)\server'"
+	@powershell -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$(CURDIR)\client\"; pnpm dev' -WorkingDirectory '$(CURDIR)\client'"
+	@powershell -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'ngrok http --url=conversational.ngrok.app 8000' -WorkingDirectory '$(CURDIR)'"
 
 _pretty_tmux:
 	@echo "Launching side-by-side logs in tmux..."
