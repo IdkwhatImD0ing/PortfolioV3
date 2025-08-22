@@ -177,7 +177,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          agent_id: "agent_c5ae64152c9091e17243c9bdfc", // Default test agent
+          agent_id: process.env.NEXT_PUBLIC_RETELL_AGENT_ID,
           metadata: {
             session_started: new Date().toISOString(),
             platform: "web",
