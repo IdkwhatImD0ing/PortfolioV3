@@ -314,11 +314,10 @@ class LlmClient:
             tools=self.prepare_functions(),
             input_guardrails=[security_guardrail],  # Pass the function directly
             model_settings=ModelSettings(
-                verbosity="medium",
+                verbosity="low",
                 reasoning=Reasoning(
                     effort="minimal",
                     summary="auto",
-                    max_tokens=300,
                 ),
             ),
         )

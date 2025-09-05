@@ -57,5 +57,19 @@ gcloud run deploy "$SERVICE_NAME" \
   --execution-environment gen2 \
   $AUTH_FLAG
 
-echo "✅ Deployed. URL:"
+echo "✅ Deployed. Default URL:"
 gcloud run services describe "$SERVICE_NAME" --region "$REGION" --format='value(status.url)'
+
+CUSTOM_DOMAIN="portfolio-ws.art3m1s.me"
+
+# Check if mapping exists
+if gcloud run domain-mappings describe "$CUSTOM_DOMAIN" --region "$REGION" >/dev/null 2>&1; then
+  echo "▶ Domain mapping for $CUSTOM_DOMAIN already exists."
+else
+  echo "▶ Creating domain mapping for $CUSTOM_DOMAIN…"
+  gcloud run domain-mappings create --service "$SERVICE_NAME" \
+    --domain "$CUSTOM_DOMAIN" \
+    --region "$REGION"
+fi
+
+echo "✅ Service is mapped to: https://$CUSTOM_DOMAIN"
