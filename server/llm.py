@@ -318,6 +318,7 @@ class LlmClient:
                 reasoning=Reasoning(
                     effort="minimal",
                     summary="auto",
+                    max_tokens=300,
                 ),
             ),
         )
