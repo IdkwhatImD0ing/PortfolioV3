@@ -193,7 +193,7 @@ const VoiceChatSidebarComponent = ({
         {!isCalling ? (
           <Button
             onClick={toggleCall}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-xl transition-all duration-300 hover:shadow-glow"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-xl transition-all duration-300 hover:shadow-glow cursor-pointer"
           >
             <Mic className="mr-2 h-5 w-5" /> Start Voice Interaction
           </Button>
