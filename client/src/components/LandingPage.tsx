@@ -1,9 +1,10 @@
 "use client"
 
+import { memo } from "react"
 import { motion } from "motion/react"
 import { Mic, MousePointer, Keyboard, ArrowLeft } from "lucide-react"
 
-export default function LandingPage() {
+function LandingPage() {
   return (
     <div className="h-screen bg-background flex overflow-hidden">
       {/* Main Content Area */}
@@ -82,7 +83,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <h3 className="font-medium text-foreground text-sm mb-0.5">Start the Conversation</h3>
-                  <p className="text-xs text-muted-foreground">Click "Start Conversation" to begin</p>
+                  <p className="text-xs text-muted-foreground">Click &quot;Start Conversation&quot; to begin</p>
                 </div>
               </div>
 
@@ -93,7 +94,7 @@ export default function LandingPage() {
                 <div>
                   <h3 className="font-medium text-foreground text-sm mb-0.5">Speak Naturally</h3>
                   <p className="text-xs text-muted-foreground">
-                    Ask about projects, experience, or anything you're curious about
+                    Ask about projects, experience, or anything you&apos;re curious about
                   </p>
                 </div>
               </div>
@@ -124,29 +125,29 @@ export default function LandingPage() {
             <div className="grid gap-2 md:grid-cols-2">
               <div className="space-y-2">
                 <div className="bg-primary/10 border border-primary/30 rounded-lg p-2 hover:bg-primary/15 transition-colors">
-                  <p className="text-xs text-foreground font-medium">"Who is Bill?"</p>
+                  <p className="text-xs text-foreground font-medium">&quot;Who is Bill?&quot;</p>
                 </div>
 
                 <div className="bg-accent/10 border border-accent/30 rounded-lg p-2 hover:bg-accent/15 transition-colors">
-                  <p className="text-xs text-foreground font-medium">"Tell me about Bill's education"</p>
+                  <p className="text-xs text-foreground font-medium">&quot;Tell me about Bill&apos;s education&quot;</p>
                 </div>
 
                 <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2 hover:bg-secondary/15 transition-colors">
-                  <p className="text-xs text-foreground font-medium">"What AI projects has Bill built?"</p>
+                  <p className="text-xs text-foreground font-medium">&quot;What AI projects has Bill built?&quot;</p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="bg-primary/10 border border-primary/30 rounded-lg p-2 hover:bg-primary/15 transition-colors">
-                  <p className="text-xs text-foreground font-medium">"Show me your latest projects"</p>
+                  <p className="text-xs text-foreground font-medium">&quot;Show me your latest projects&quot;</p>
                 </div>
 
                 <div className="bg-accent/10 border border-accent/30 rounded-lg p-2 hover:bg-accent/15 transition-colors">
-                  <p className="text-xs text-foreground font-medium">"What technologies do you use?"</p>
+                  <p className="text-xs text-foreground font-medium">&quot;What technologies do you use?&quot;</p>
                 </div>
 
                 <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2 hover:bg-secondary/15 transition-colors">
-                  <p className="text-xs text-foreground font-medium">"Tell me about your experience"</p>
+                  <p className="text-xs text-foreground font-medium">&quot;Tell me about your experience&quot;</p>
                 </div>
               </div>
             </div>
@@ -198,3 +199,5 @@ export default function LandingPage() {
     </div>
   )
 }
+
+export default memo(LandingPage)

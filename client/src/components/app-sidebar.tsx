@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, memo } from "react"
 import Image from "next/image"
 import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,13 +20,13 @@ interface VoiceChatSidebarProps {
   isAgentTalking: boolean
 }
 
-export function VoiceChatSidebar({
+const VoiceChatSidebarComponent = ({
   isCalling,
   startCall,
   endCall,
   transcript,
   isAgentTalking,
-}: VoiceChatSidebarProps) {
+}: VoiceChatSidebarProps) => {
   const [isPaused, setIsPaused] = useState(false)
   const [waveformValues, setWaveformValues] = useState<number[]>(Array(10).fill(2))
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -227,4 +227,6 @@ export function VoiceChatSidebar({
     </div>
   )
 }
+
+export const VoiceChatSidebar = memo(VoiceChatSidebarComponent)
 

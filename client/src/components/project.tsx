@@ -1,36 +1,30 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, memo } from "react"
 import { motion } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Github, LinkIcon } from "lucide-react"
 import Image from "next/image"
-
-interface Project {
-  id: string
-  name: string
-  summary: string
-  details: string
-  github: string | null
-  demo: string | null  // Can be either a YouTube URL or an image path
-}
+import { dataCache, type Project } from "@/lib/dataCache"
 
 interface ProjectPageProps {
   projectId?: string
 }
 
-export default function ProjectPage({ projectId }: ProjectPageProps) {
+function ProjectPage({ projectId }: ProjectPageProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [currentProjectIndex, setCurrentProjectIndex] = useState(0)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch projects data from public directory
+  // Fetch projects data using cache
   useEffect(() => {
-    fetch('/data.json')
-      .then(res => res.json())
+    let mounted = true
+    
+    dataCache.getProjects()
       .then(data => {
+        if (!mounted) return
         setProjects(data)
         setLoading(false)
         // If projectId is provided, find and set the index
@@ -42,10 +36,15 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
         }
       })
       .catch(err => {
+        if (!mounted) return
         console.error('Failed to load projects:', err)
         setLoading(false)
       })
-  }, [])
+    
+    return () => {
+      mounted = false
+    }
+  }, [projectId])
 
   // Update project when projectId changes
   useEffect(() => {
@@ -57,21 +56,31 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     }
   }, [projectId, projects])
 
-  const currentProject = projects[currentProjectIndex]
+  // Memoize current project to prevent unnecessary recalculations
+  const currentProject = useMemo(() => 
+    projects[currentProjectIndex],
+    [projects, currentProjectIndex]
+  )
 
   useEffect(() => {
     setIsLoaded(true)
   }, [])
 
-  // Helper function to extract YouTube video ID from URL
-  const getYouTubeVideoId = (url: string): string | null => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
-    return match ? match[1] : null
-  }
+  // Memoize helper function to extract YouTube video ID from URL
+  const getYouTubeVideoId = useMemo(() => {
+    return (url: string): string | null => {
+      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
+      return match ? match[1] : null
+    }
+  }, [])
 
-  // Check if demo is a video URL or image
-  const isVideo = currentProject?.demo && (currentProject.demo.includes('youtube.com') || currentProject.demo.includes('youtu.be'))
-  const videoId = isVideo && currentProject?.demo ? getYouTubeVideoId(currentProject.demo) : null
+  // Memoize video check calculations
+  const { isVideo, videoId } = useMemo(() => {
+    const isVideoUrl = currentProject?.demo && 
+      (currentProject.demo.includes('youtube.com') || currentProject.demo.includes('youtu.be'))
+    const id = isVideoUrl && currentProject?.demo ? getYouTubeVideoId(currentProject.demo) : null
+    return { isVideo: isVideoUrl, videoId: id }
+  }, [currentProject?.demo, getYouTubeVideoId])
   
   // Debug logging
   useEffect(() => {
@@ -99,7 +108,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     visible: {
       y: 0,
       opacity: 1,
-      transition: { type: "spring", stiffness: 100 },
+      transition: { type: "spring" as const, stiffness: 100 },
     },
   }
 
@@ -270,3 +279,5 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     </motion.div>
   )
 }
+
+export default memo(ProjectPage)

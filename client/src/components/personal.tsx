@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, memo } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "motion/react"
 
-export default function PersonalPage() {
+function PersonalPage() {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -173,3 +173,5 @@ export default function PersonalPage() {
     </div>
   )
 }
+
+export default memo(PersonalPage)
