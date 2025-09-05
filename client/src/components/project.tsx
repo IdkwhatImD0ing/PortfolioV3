@@ -1,36 +1,30 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, memo } from "react"
 import { motion } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Github, LinkIcon } from "lucide-react"
 import Image from "next/image"
-
-interface Project {
-  id: string
-  name: string
-  summary: string
-  details: string
-  github: string | null
-  demo: string  // Can be either a YouTube URL or an image path
-}
+import { dataCache, type Project } from "@/lib/dataCache"
 
 interface ProjectPageProps {
   projectId?: string
 }
 
-export default function ProjectPage({ projectId }: ProjectPageProps) {
+function ProjectPage({ projectId }: ProjectPageProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [currentProjectIndex, setCurrentProjectIndex] = useState(0)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch projects data from public directory
+  // Fetch projects data using cache
   useEffect(() => {
-    fetch('/mock.json')
-      .then(res => res.json())
+    let mounted = true
+    
+    dataCache.getProjects()
       .then(data => {
+        if (!mounted) return
         setProjects(data)
         setLoading(false)
         // If projectId is provided, find and set the index
@@ -42,10 +36,15 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
         }
       })
       .catch(err => {
+        if (!mounted) return
         console.error('Failed to load projects:', err)
         setLoading(false)
       })
-  }, [])
+    
+    return () => {
+      mounted = false
+    }
+  }, [projectId])
 
   // Update project when projectId changes
   useEffect(() => {
@@ -57,21 +56,41 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     }
   }, [projectId, projects])
 
-  const currentProject = projects[currentProjectIndex]
+  // Memoize current project to prevent unnecessary recalculations
+  const currentProject = useMemo(() => 
+    projects[currentProjectIndex],
+    [projects, currentProjectIndex]
+  )
 
   useEffect(() => {
     setIsLoaded(true)
   }, [])
 
-  // Helper function to extract YouTube video ID from URL
-  const getYouTubeVideoId = (url: string): string | null => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
-    return match ? match[1] : null
-  }
+  // Memoize helper function to extract YouTube video ID from URL
+  const getYouTubeVideoId = useMemo(() => {
+    return (url: string): string | null => {
+      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
+      return match ? match[1] : null
+    }
+  }, [])
 
-  // Check if demo is a video URL or image
-  const isVideo = currentProject?.demo?.includes('youtube.com') || currentProject?.demo?.includes('youtu.be')
-  const videoId = isVideo && currentProject?.demo ? getYouTubeVideoId(currentProject.demo) : null
+  // Memoize video check calculations
+  const { isVideo, videoId } = useMemo(() => {
+    const isVideoUrl = currentProject?.demo && 
+      (currentProject.demo.includes('youtube.com') || currentProject.demo.includes('youtu.be'))
+    const id = isVideoUrl && currentProject?.demo ? getYouTubeVideoId(currentProject.demo) : null
+    return { isVideo: isVideoUrl, videoId: id }
+  }, [currentProject?.demo, getYouTubeVideoId])
+  
+  // Debug logging
+  useEffect(() => {
+    if (currentProject) {
+      console.log('Current project:', currentProject.name)
+      console.log('Demo URL:', currentProject.demo)
+      console.log('Is Video:', isVideo)
+      console.log('Video ID:', videoId)
+    }
+  }, [currentProject, isVideo, videoId])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -89,7 +108,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     visible: {
       y: 0,
       opacity: 1,
-      transition: { type: "spring", stiffness: 100 },
+      transition: { type: "spring" as const, stiffness: 100 },
     },
   }
 
@@ -116,38 +135,40 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
       </motion.div>
 
       <div className="flex flex-col lg:flex-row gap-8 flex-1 min-h-0">
-        <motion.div className="w-full lg:w-1/2 flex items-center justify-center" variants={itemVariants}>
-          <div className="relative">
+        <motion.div className="w-full lg:w-1/2 flex items-start justify-center" variants={itemVariants}>
+          <div className="relative w-full">
             {/* Demo content - either video or image */}
-            <div
-              className="relative w-full overflow-hidden rounded-xl"
-              style={{
-                paddingBottom: isVideo ? "56.25%" : "0",
-                boxShadow: "0 0 20px rgba(162, 89, 255, 0.3)",
-              }}
-            >
-              {isVideo && videoId ? (
+            {isVideo && videoId ? (
+              <div
+                className="relative w-full overflow-hidden rounded-xl"
+                style={{
+                  paddingBottom: "56.25%",
+                  boxShadow: "0 0 20px rgba(162, 89, 255, 0.3)",
+                }}
+              >
                 <iframe
                   src={`https://www.youtube.com/embed/${videoId}`}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className="absolute top-0 left-0 w-full h-full"
+                  title={`${currentProject.name} Demo Video`}
                 ></iframe>
-              ) : currentProject?.demo ? (
-                <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
-                  <Image
-                    src={currentProject.demo}
-                    alt={currentProject.name}
-                    fill
-                    className="object-cover rounded-xl"
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-64 bg-[#1A1A2E] rounded-xl">
-                  <p style={{ color: "#E6E6F1" }}>No demo available</p>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : currentProject?.demo ? (
+              <div className="relative w-full rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", boxShadow: "0 0 20px rgba(162, 89, 255, 0.3)" }}>
+                <Image
+                  src={currentProject.demo}
+                  alt={currentProject.name}
+                  fill
+                  className="object-cover"
+                  unoptimized={currentProject.demo.includes('cloudfront.net')}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-64 bg-[#1A1A2E] rounded-xl">
+                <p style={{ color: "#E6E6F1" }}>No demo available</p>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -177,36 +198,44 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
                 </motion.h2>
 
                 <motion.div className="space-y-6" variants={itemVariants}>
-                  {/* Summary Section */}
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
-                      Summary
-                    </h3>
-                    <p className="leading-relaxed text-sm" style={{ color: "#B8B8C4" }}>
-                      {currentProject?.summary}
-                    </p>
-                  </div>
-
                   {/* Details Section */}
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3" style={{ color: "#E6E6F1" }}>
-                      Details
-                    </h3>
-                    <div className="space-y-4">
-                      {currentProject?.details.split('\n\n').map((section, index) => {
-                        const [title, ...content] = section.split('\n')
-                        return (
-                          <div key={index}>
+                  <div className="space-y-4">
+                    {currentProject?.details.split('\n\n').map((section, index) => {
+                      const lines = section.split('\n')
+                      const title = lines[0]
+                      const content = lines.slice(1).join('\n')
+                      
+                      // Skip empty sections
+                      if (!title && !content) return null
+                      
+                      return (
+                        <div key={index}>
+                          {title && (
                             <h4 className="font-medium mb-2" style={{ color: "#A259FF" }}>
-                              {title}
+                              {title.replace(/:/g, '')}
                             </h4>
-                            <p className="text-sm leading-relaxed" style={{ color: "#B8B8C4" }}>
-                              {content.join('\n').replace(/^- /gm, '• ')}
-                            </p>
-                          </div>
-                        )
-                      })}
-                    </div>
+                          )}
+                          {content && (
+                            <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "#B8B8C4" }}>
+                              {content.split('\n').map((line, lineIndex) => {
+                                // Replace markdown bold with HTML
+                                const processedLine = line
+                                  .replace(/^- /, '• ')
+                                  .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #E6E6F1">$1</strong>')
+                                
+                                return (
+                                  <div 
+                                    key={lineIndex} 
+                                    dangerouslySetInnerHTML={{ __html: processedLine }}
+                                    className="mb-1"
+                                  />
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </motion.div>
               </div>
@@ -250,3 +279,5 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     </motion.div>
   )
 }
+
+export default memo(ProjectPage)

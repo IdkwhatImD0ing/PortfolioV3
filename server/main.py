@@ -18,6 +18,46 @@ from llm import LlmClient
 
 
 load_dotenv(override=True)
+
+# Validate required environment variables at startup
+def validate_environment_variables():
+    """Validate that all required environment variables are set."""
+    required_vars = {
+        "RETELL_API_KEY": "Retell API key for voice services",
+        "OPENAI_API_KEY": "OpenAI API key for embeddings and LLM",
+        "PINECONE_API_KEY": "Pinecone API key for vector database",
+    }
+    
+    optional_vars = {
+        "OBFUSCATED_WS_PATH": "WebSocket path obfuscation (defaults to 'ws-default')",
+        "LLM_DEBUG": "Enable debug logging for LLM (0 or 1, defaults to 0)",
+    }
+    
+    missing_required = []
+    for var, description in required_vars.items():
+        if not os.getenv(var):
+            missing_required.append(f"  - {var}: {description}")
+    
+    if missing_required:
+        error_msg = "Missing required environment variables:\n" + "\n".join(missing_required)
+        error_msg += "\n\nPlease set these variables in your .env file or environment."
+        raise ValueError(error_msg)
+    
+    # Log optional variables status
+    print("Environment variables validated successfully:")
+    for var in required_vars:
+        print(f"  ✓ {var} is set")
+    
+    for var, description in optional_vars.items():
+        value = os.getenv(var)
+        if value:
+            print(f"  ✓ {var} is set to: {value}")
+        else:
+            print(f"  ℹ {var} not set ({description})")
+
+# Validate environment on startup
+validate_environment_variables()
+
 app = FastAPI()
 origins = [
     "http://localhost:3000",
@@ -31,7 +71,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-retell = Retell(api_key=os.environ["RETELL_API_KEY"])
+retell = Retell(api_key=os.getenv("RETELL_API_KEY"))
+
+
+@app.get("/ping")
+async def ping():
+    return {"message": "pong"}
 
 
 # Handle webhook from Retell server. This is used to receive events from Retell server.
@@ -42,7 +87,7 @@ async def handle_webhook(request: Request):
         post_data = await request.json()
         valid_signature = retell.verify(
             json.dumps(post_data, separators=(",", ":"), ensure_ascii=False),
-            api_key=str(os.environ["RETELL_API_KEY"]),
+            api_key=str(os.getenv("RETELL_API_KEY")),
             signature=str(request.headers.get("X-Retell-Signature")),
         )
         if not valid_signature:
@@ -71,8 +116,11 @@ async def handle_webhook(request: Request):
 # Start a websocket server to exchange text input and output with Retell server. Retell server
 # will send over transcriptions and other information. This server here will be responsible for
 # generating responses with LLM and send back to Retell server.
-@app.websocket("/llm-websocket/{call_id}")
+@app.websocket(f"/{os.environ.get('OBFUSCATED_WS_PATH', 'ws-default')}" + "/{call_id}")
 async def websocket_handler(websocket: WebSocket, call_id: str):
+    # Initialize tasks set before try block for proper cleanup
+    tasks = set()
+    
     try:
         print(f"Attempting to accept websocket for call_id={call_id}")
         await websocket.accept()
@@ -145,7 +193,12 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
                 )
 
         async for data in websocket.iter_json():
-            asyncio.create_task(handle_message(data))
+            # Create task and add to tracking set
+            task = asyncio.create_task(handle_message(data))
+            tasks.add(task)
+            
+            # Remove completed tasks from the set
+            task.add_done_callback(lambda t: tasks.discard(t))
 
     except WebSocketDisconnect:
         print(f"LLM WebSocket disconnected for {call_id}")
@@ -155,4 +208,13 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
         print(f"Error in LLM WebSocket: {e} for {call_id}")
         await websocket.close(1011, "Server error")
     finally:
+        # Cancel all pending tasks to prevent memory leaks
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        
+        # Wait for all tasks to complete cancellation
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        
         print(f"LLM WebSocket connection closed for {call_id}")

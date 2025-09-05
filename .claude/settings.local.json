@@ -12,7 +12,9 @@
       "Bash(conda activate:*)",
       "Bash(pip install:*)",
       "Bash(conda run:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(pnpm run:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

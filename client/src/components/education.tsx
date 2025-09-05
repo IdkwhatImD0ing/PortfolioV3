@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, memo } from "react"
 import Image from "next/image"
 import { motion } from "motion/react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,7 +11,7 @@ const educationData = [
         school: "University of Southern California (USC)",
         degree: "Master's in Computer Science + AI",
         duration: "August 2023 - May 2025",
-        details: "Focusing on advanced topics in Computer Science and Artificial Intelligence.",
+        details: "Graduated with a specialization in Artificial Intelligence, focusing on advanced machine learning and AI applications.",
         logo: "/usc.png?height=64&width=64",
         color: "var(--primary)", // Primary color
     },
@@ -50,14 +50,14 @@ const item = {
         y: 0,
         opacity: 1,
         transition: {
-            type: "spring",
+            type: "spring" as const,
             stiffness: 100,
             damping: 15,
         },
     },
 }
 
-export default function EducationPage() {
+function EducationPage() {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
 
     const toggleExpand = (index: number) => {
@@ -179,3 +179,5 @@ export default function EducationPage() {
         </div>
     )
 }
+
+export default memo(EducationPage)

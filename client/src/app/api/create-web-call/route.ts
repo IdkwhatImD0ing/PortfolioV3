@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
             },
         });
     } catch (error: unknown) {
-        const err = error as { response?: { data?: unknown; status?: number }; message?: string };
+        const err = error as { response?: { data?: { error?: string; [key: string]: unknown }; status?: number }; message?: string };
         console.error('Error creating web call:', err.response?.data || err.message);
 
         // Determine the status code
