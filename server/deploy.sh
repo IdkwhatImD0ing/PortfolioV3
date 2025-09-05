@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail || set -eu
 
 ### ====== Config (edit these) ======
 PROJECT_ID="${PROJECT_ID:-spiritual-storm-469704-n2}"

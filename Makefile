@@ -30,6 +30,12 @@ stop:
 	@pkill -f "ngrok http" || true
 	@pkill -f "pnpm dev" || true
 
+deploy:
+	@echo "Deploying to Cloud Run..."
+	@cd server && conda activate portfoliov3
+	@dos2unix deploy.sh
+	@bash deploy.sh
+
 # Clean up processes
 clean: stop
 	@echo "Cleaned up all processes"
