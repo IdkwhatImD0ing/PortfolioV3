@@ -1,10 +1,12 @@
 "use client"
 
 import { memo } from "react"
-import { motion } from "motion/react"
+import { motion, useReducedMotion } from "motion/react"
 import { Mic, MousePointer, Keyboard, ArrowLeft } from "lucide-react"
 
 function LandingPage() {
+  const prefersReducedMotion = useReducedMotion()
+  
   return (
     <div className="h-screen bg-background flex overflow-hidden">
       {/* Main Content Area */}
@@ -53,7 +55,7 @@ function LandingPage() {
                 <div className="flex items-center gap-3 mb-2">
                   <Mic className="w-5 h-5 text-primary" />
                   <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
+                    animate={prefersReducedMotion ? {} : { scale: [1, 1.1, 1] }}
                     transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
                     className="w-2 h-2 bg-primary rounded-full"
                   ></motion.div>
@@ -78,8 +80,8 @@ function LandingPage() {
 
             <div className="space-y-2 text-left">
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-primary font-semibold text-xs">1</span>
+                <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-primary font-semibold text-sm">1</span>
                 </div>
                 <div>
                   <h3 className="font-medium text-foreground text-sm mb-0.5">Start the Conversation</h3>
@@ -88,8 +90,8 @@ function LandingPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-primary font-semibold text-xs">2</span>
+                <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-primary font-semibold text-sm">2</span>
                 </div>
                 <div>
                   <h3 className="font-medium text-foreground text-sm mb-0.5">Speak Naturally</h3>
@@ -100,8 +102,8 @@ function LandingPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-primary font-semibold text-xs">3</span>
+                <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-primary font-semibold text-sm">3</span>
                 </div>
                 <div>
                   <h3 className="font-medium text-foreground text-sm mb-0.5">Explore Through Dialogue</h3>
@@ -122,31 +124,31 @@ function LandingPage() {
           >
             <h2 className="text-lg font-semibold text-foreground text-center">Try Asking...</h2>
 
-            <div className="grid gap-2 md:grid-cols-2">
+            <div className="grid gap-2 md:grid-cols-2" role="list" aria-label="Example questions you can ask">
               <div className="space-y-2">
-                <div className="bg-primary/10 border border-primary/30 rounded-lg p-2 hover:bg-primary/15 transition-colors">
+                <div className="bg-primary/10 border border-primary/30 rounded-lg p-2" role="listitem">
                   <p className="text-xs text-foreground font-medium">&quot;Who is Bill?&quot;</p>
                 </div>
 
-                <div className="bg-accent/10 border border-accent/30 rounded-lg p-2 hover:bg-accent/15 transition-colors">
+                <div className="bg-accent/10 border border-accent/30 rounded-lg p-2" role="listitem">
                   <p className="text-xs text-foreground font-medium">&quot;Tell me about Bill&apos;s education&quot;</p>
                 </div>
 
-                <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2 hover:bg-secondary/15 transition-colors">
+                <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2" role="listitem">
                   <p className="text-xs text-foreground font-medium">&quot;What AI projects has Bill built?&quot;</p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="bg-primary/10 border border-primary/30 rounded-lg p-2 hover:bg-primary/15 transition-colors">
+                <div className="bg-primary/10 border border-primary/30 rounded-lg p-2" role="listitem">
                   <p className="text-xs text-foreground font-medium">&quot;Show me your latest projects&quot;</p>
                 </div>
 
-                <div className="bg-accent/10 border border-accent/30 rounded-lg p-2 hover:bg-accent/15 transition-colors">
+                <div className="bg-accent/10 border border-accent/30 rounded-lg p-2" role="listitem">
                   <p className="text-xs text-foreground font-medium">&quot;What technologies do you use?&quot;</p>
                 </div>
 
-                <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2 hover:bg-secondary/15 transition-colors">
+                <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2" role="listitem">
                   <p className="text-xs text-foreground font-medium">&quot;Tell me about your experience&quot;</p>
                 </div>
               </div>
@@ -163,7 +165,7 @@ function LandingPage() {
             <ArrowLeft className="w-4 h-4" />
             <span className="text-base font-medium">Begin your voice journey</span>
             <motion.div
-              animate={{ x: [-5, 5, -5] }}
+              animate={prefersReducedMotion ? {} : { x: [-5, 5, -5] }}
               transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
               className="w-2 h-2 bg-primary rounded-full"
             ></motion.div>
@@ -172,7 +174,7 @@ function LandingPage() {
           {/* Ambient Elements */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <motion.div
-              animate={{
+              animate={prefersReducedMotion ? {} : {
                 rotate: 360,
                 scale: [1, 1.1, 1],
               }}
@@ -183,7 +185,7 @@ function LandingPage() {
               className="absolute top-1/4 right-1/4 w-32 h-32 bg-primary/5 rounded-full blur-xl"
             ></motion.div>
             <motion.div
-              animate={{
+              animate={prefersReducedMotion ? {} : {
                 rotate: -360,
                 scale: [1.1, 1, 1.1],
               }}

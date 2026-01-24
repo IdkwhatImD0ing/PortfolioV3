@@ -8,6 +8,57 @@ import { Github, LinkIcon } from "lucide-react"
 import Image from "next/image"
 import { dataCache, type Project } from "@/lib/dataCache"
 
+// Hoisted RegExp for YouTube URL parsing
+const YOUTUBE_REGEX = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
+
+function getYouTubeVideoId(url: string): string | null {
+  const match = url.match(YOUTUBE_REGEX)
+  return match ? match[1] : null
+}
+
+// Safe text renderer that handles markdown-style bold without dangerouslySetInnerHTML
+function renderFormattedText(text: string): React.ReactNode[] {
+  // Replace bullet points
+  const processedText = text.replace(/^- /, '• ')
+  
+  // Split by bold markers and render safely
+  const parts = processedText.split(/(\*\*.*?\*\*)/g)
+  
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      // Bold text
+      const boldContent = part.slice(2, -2)
+      return (
+        <strong key={index} style={{ color: '#E6E6F1' }}>
+          {boldContent}
+        </strong>
+      )
+    }
+    return <span key={index}>{part}</span>
+  })
+}
+
+// Animation variants hoisted to module level
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring" as const, stiffness: 100 },
+  },
+}
+
 interface ProjectPageProps {
   projectId?: string
 }
@@ -18,16 +69,28 @@ function ProjectPage({ projectId }: ProjectPageProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch projects data using cache
+  // Fetch projects and handle projectId changes (Rule 7.6: Combine Multiple Array Iterations)
   useEffect(() => {
     let mounted = true
     
+    // If projects are already loaded, just update the index
+    if (projects.length > 0) {
+      if (projectId) {
+        const index = projects.findIndex(p => p.id === projectId)
+        if (index !== -1) {
+          setCurrentProjectIndex(index)
+        }
+      }
+      return
+    }
+    
+    // Fetch projects if not yet loaded
     dataCache.getProjects()
       .then(data => {
         if (!mounted) return
         setProjects(data)
         setLoading(false)
-        // If projectId is provided, find and set the index
+        // Set index if projectId is provided
         if (projectId) {
           const index = data.findIndex((p: Project) => p.id === projectId)
           if (index !== -1) {
@@ -44,16 +107,6 @@ function ProjectPage({ projectId }: ProjectPageProps) {
     return () => {
       mounted = false
     }
-  }, [projectId])
-
-  // Update project when projectId changes
-  useEffect(() => {
-    if (projectId && projects.length > 0) {
-      const index = projects.findIndex(p => p.id === projectId)
-      if (index !== -1) {
-        setCurrentProjectIndex(index)
-      }
-    }
   }, [projectId, projects])
 
   // Memoize current project to prevent unnecessary recalculations
@@ -66,56 +119,29 @@ function ProjectPage({ projectId }: ProjectPageProps) {
     setIsLoaded(true)
   }, [])
 
-  // Memoize helper function to extract YouTube video ID from URL
-  const getYouTubeVideoId = useMemo(() => {
-    return (url: string): string | null => {
-      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
-      return match ? match[1] : null
-    }
-  }, [])
-
   // Memoize video check calculations
   const { isVideo, videoId } = useMemo(() => {
     const isVideoUrl = currentProject?.demo && 
       (currentProject.demo.includes('youtube.com') || currentProject.demo.includes('youtu.be'))
     const id = isVideoUrl && currentProject?.demo ? getYouTubeVideoId(currentProject.demo) : null
     return { isVideo: isVideoUrl, videoId: id }
-  }, [currentProject?.demo, getYouTubeVideoId])
-  
-  // Debug logging
-  useEffect(() => {
-    if (currentProject) {
-      console.log('Current project:', currentProject.name)
-      console.log('Demo URL:', currentProject.demo)
-      console.log('Is Video:', isVideo)
-      console.log('Video ID:', videoId)
-    }
-  }, [currentProject, isVideo, videoId])
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { type: "spring" as const, stiffness: 100 },
-    },
-  }
+  }, [currentProject?.demo])
 
   if (loading || projects.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0A0A0A" }}>
-        <p style={{ color: "#E6E6F1" }}>Loading projects...</p>
+      <div 
+        className="h-screen flex flex-col p-4 md:p-8" 
+        style={{ background: "#0A0A0A" }}
+        role="status"
+        aria-busy="true"
+        aria-label="Loading projects"
+      >
+        <span className="sr-only">Loading projects…</span>
+        <div className="mb-8 h-10 w-64 bg-[#161622] rounded animate-pulse" aria-hidden="true" />
+        <div className="flex flex-col lg:flex-row gap-8 flex-1" aria-hidden="true">
+          <div className="w-full lg:w-1/2 aspect-video bg-[#161622] rounded-xl animate-pulse" />
+          <div className="w-full lg:w-1/2 bg-[#161622] rounded-xl animate-pulse" />
+        </div>
       </div>
     )
   }
@@ -217,20 +243,11 @@ function ProjectPage({ projectId }: ProjectPageProps) {
                           )}
                           {content && (
                             <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "#B8B8C4" }}>
-                              {content.split('\n').map((line, lineIndex) => {
-                                // Replace markdown bold with HTML
-                                const processedLine = line
-                                  .replace(/^- /, '• ')
-                                  .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #E6E6F1">$1</strong>')
-                                
-                                return (
-                                  <div 
-                                    key={lineIndex} 
-                                    dangerouslySetInnerHTML={{ __html: processedLine }}
-                                    className="mb-1"
-                                  />
-                                )
-                              })}
+                              {content.split('\n').map((line, lineIndex) => (
+                                <div key={lineIndex} className="mb-1">
+                                  {renderFormattedText(line)}
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -242,34 +259,48 @@ function ProjectPage({ projectId }: ProjectPageProps) {
 
               <motion.div className="flex gap-4 mt-6 pt-6 border-t border-[#2A2A3B] flex-shrink-0" variants={itemVariants}>
                 {currentProject?.github && (
-                  <a href={currentProject.github} target="_blank" rel="noopener noreferrer">
-                    <Button
-                      className="flex items-center gap-2 transition-all duration-300"
-                      style={{
-                        background: "transparent",
-                        border: "1px solid #A259FF",
-                        color: "#E6E6F1",
-                      }}
+                  <Button
+                    asChild
+                    className="flex items-center gap-2 transition-all duration-300"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #A259FF",
+                      color: "#E6E6F1",
+                    }}
+                  >
+                    <a 
+                      href={currentProject.github} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      aria-label={`GitHub repository (opens in new tab)`}
                     >
-                      <Github size={18} />
+                      <Github size={18} aria-hidden="true" />
                       GitHub
-                    </Button>
-                  </a>
+                      <span className="sr-only">(opens in new tab)</span>
+                    </a>
+                  </Button>
                 )}
                 {isVideo && currentProject?.demo && (
-                  <a href={currentProject.demo} target="_blank" rel="noopener noreferrer">
-                    <Button
-                      className="flex items-center gap-2 transition-all duration-300"
-                      style={{
-                        background: "transparent",
-                        border: "1px solid #A259FF",
-                        color: "#E6E6F1",
-                      }}
+                  <Button
+                    asChild
+                    className="flex items-center gap-2 transition-all duration-300"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #A259FF",
+                      color: "#E6E6F1",
+                    }}
+                  >
+                    <a 
+                      href={currentProject.demo} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      aria-label={`Watch full demo (opens in new tab)`}
                     >
-                      <LinkIcon size={18} />
+                      <LinkIcon size={18} aria-hidden="true" />
                       Watch Full Demo
-                    </Button>
-                  </a>
+                      <span className="sr-only">(opens in new tab)</span>
+                    </a>
+                  </Button>
                 )}
               </motion.div>
             </CardContent>

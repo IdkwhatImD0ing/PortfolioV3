@@ -5,8 +5,9 @@ import PersonalPage from "@/components/personal";
 import ProjectPage from "@/components/project";
 import LandingPage from "@/components/LandingPage";
 import FallbackLink from "@/components/fallback-link";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { RetellWebClient } from "retell-client-js-sdk";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import type { RetellWebClient as RetellWebClientType } from "retell-client-js-sdk";
 import { VoiceChatSidebar } from "@/components/app-sidebar";
 import { toast } from "@/hooks/use-toast";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -15,8 +16,6 @@ interface RegisterCallResponse {
   access_token: string;
   call_id: string;
 }
-
-const retellWebClient = new RetellWebClient();
 
 interface NavigationMeta {
   type: string;
@@ -29,14 +28,45 @@ interface TranscriptEntry {
   content: string;
 }
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Read initial state from URL
+  const initialPage = (searchParams.get('page') as "landing" | "education" | "project" | "personal") || "landing";
+  const initialProjectId = searchParams.get('projectId') || undefined;
+
   const [isCalling, setIsCalling] = useState(false);
-  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal">("landing");
+  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal">(initialPage);
   const [fullTranscript, setFullTranscript] = useState<TranscriptEntry[]>([]);
   const [isAgentTalking, setIsAgentTalking] = useState(false);
-  const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
+  const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(initialProjectId);
   const transcriptLock = useRef(false);
   const transcriptQueue = useRef<TranscriptEntry[][]>([]);
+  
+  // Lazy-loaded Retell client (Rule 2.4: Dynamic Imports for Heavy Components)
+  const retellClientRef = useRef<RetellWebClientType | null>(null);
+  const listenersSetupRef = useRef(false);
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activePage !== 'landing') params.set('page', activePage);
+    if (currentProjectId) params.set('projectId', currentProjectId);
+    const newUrl = params.toString() ? `?${params.toString()}` : '/';
+    router.replace(newUrl, { scroll: false });
+  }, [activePage, currentProjectId, router]);
+
+  // Update page title based on current page (Web Interface Guideline: Accurate page titles)
+  useEffect(() => {
+    const pageTitles: Record<string, string> = {
+      landing: "Bill Zhang | AI Engineer Portfolio",
+      personal: "About Me | Bill Zhang",
+      education: "Education | Bill Zhang",
+      project: "Projects | Bill Zhang",
+    };
+    document.title = pageTitles[activePage] || "Bill Zhang | AI Engineer Portfolio";
+  }, [activePage]);
 
   // Mobile detection and redirect
   useEffect(() => {
@@ -118,19 +148,21 @@ export default function Home() {
     });
   }, []);
 
-  // Initialize the SDK, set up event listeners, and start the call
-  useEffect(() => {
-    retellWebClient.on("call_started", () => {
+  // Set up event listeners on the Retell client
+  const setupRetellListeners = useCallback((client: RetellWebClientType) => {
+    if (listenersSetupRef.current) return;
+    
+    client.on("call_started", () => {
       console.log("Call started");
       setIsCalling(true);
     });
 
-    retellWebClient.on("agent_start_talking", () => {
+    client.on("agent_start_talking", () => {
       console.log("Agent started talking");
       setIsAgentTalking(true);
     });
 
-    retellWebClient.on("agent_stop_talking", () => {
+    client.on("agent_stop_talking", () => {
       console.log("Agent stopped talking");
       setIsAgentTalking(false);
     });
@@ -138,14 +170,13 @@ export default function Home() {
     // Update message such as transcript
     // You can get transcript with update.transcript
     // Please note that transcript only contains last 5 sentences to avoid the payload being too large
-    retellWebClient.on("update", (update: { transcript?: TranscriptEntry[] }) => {
+    client.on("update", (update: { transcript?: TranscriptEntry[] }) => {
       if (update.transcript && update.transcript.length > 0) {
         processTranscriptUpdate(update.transcript);
       }
     });
 
-
-    retellWebClient.on("metadata", (metadata: { metadata?: NavigationMeta }) => {
+    client.on("metadata", (metadata: { metadata?: NavigationMeta }) => {
       console.log("Metadata event received:", metadata);
 
       // The actual metadata content is in metadata.metadata
@@ -182,39 +213,43 @@ export default function Home() {
       }
     });
 
-    retellWebClient.on("call_ended", async () => {
+    client.on("call_ended", async () => {
       console.log("Call has ended. Logging call id: ");
       setIsCalling(false);
       setIsAgentTalking(false);
       // Don't clear transcript here - only clear when starting a new conversation
     });
 
-    retellWebClient.on("error", (error) => {
+    client.on("error", (error) => {
       console.error("An error occurred:", error);
       toast({
         title: "Call Error",
         description: "An error occurred during the call. Please try again.",
         variant: "destructive",
       });
-      retellWebClient.stopCall();
+      client.stopCall();
       setIsCalling(false);
       setIsAgentTalking(false);
     });
 
-
-
-    // Cleanup on unmount
-    return () => {
-      retellWebClient.off("call_started");
-      retellWebClient.off("call_ended");
-      retellWebClient.off("agent_start_talking");
-      retellWebClient.off("agent_stop_talking");
-      retellWebClient.off("audio");
-      retellWebClient.off("update");
-      retellWebClient.off("metadata");
-      retellWebClient.off("error");
-    };
+    listenersSetupRef.current = true;
   }, [processTranscriptUpdate]);
+
+  // Cleanup listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (retellClientRef.current) {
+        retellClientRef.current.off("call_started");
+        retellClientRef.current.off("call_ended");
+        retellClientRef.current.off("agent_start_talking");
+        retellClientRef.current.off("agent_stop_talking");
+        retellClientRef.current.off("audio");
+        retellClientRef.current.off("update");
+        retellClientRef.current.off("metadata");
+        retellClientRef.current.off("error");
+      }
+    };
+  }, []);
 
 
 
@@ -229,6 +264,13 @@ export default function Home() {
       const agentId = process.env.NEXT_PUBLIC_RETELL_AGENT_ID;
       if (!agentId) {
         throw new Error("Retell Agent ID is not configured. Please check your environment variables.");
+      }
+
+      // Dynamically import and instantiate the SDK only when needed (Rule 2.4)
+      if (!retellClientRef.current) {
+        const { RetellWebClient } = await import("retell-client-js-sdk");
+        retellClientRef.current = new RetellWebClient();
+        setupRetellListeners(retellClientRef.current);
       }
 
       const response = await fetch("/api/create-web-call", {
@@ -253,7 +295,7 @@ export default function Home() {
       const registerCallResponse: RegisterCallResponse = await response.json();
 
       if (registerCallResponse.access_token) {
-        await retellWebClient.startCall({
+        await retellClientRef.current.startCall({
           accessToken: registerCallResponse.access_token,
         });
 
@@ -291,10 +333,10 @@ export default function Home() {
       setIsCalling(false);
       setIsAgentTalking(false);
     }
-  }, [])
+  }, [setupRetellListeners])
 
   const endCall = useCallback(() => {
-    retellWebClient.stopCall();
+    retellClientRef.current?.stopCall();
   }, []);
 
   return (
@@ -313,7 +355,7 @@ export default function Home() {
             isAgentTalking={isAgentTalking}
           />
         </ErrorBoundary>
-        <div className="flex flex-1 min-h-screen items-center justify-center">
+        <main id="main-content" className="flex flex-1 min-h-screen items-center justify-center">
           <ErrorBoundary fallback={
             <div className="text-center p-8">
               <h2 className="text-xl font-bold text-red-600 mb-2">Page Error</h2>
@@ -334,8 +376,42 @@ export default function Home() {
             {activePage === "education" && <EducationPage />}
             {activePage === "project" && <ProjectPage projectId={currentProjectId} />}
           </ErrorBoundary>
-        </div>
+        </main>
       </div>
     </ErrorBoundary>
+  );
+}
+
+// Loading skeleton component for Suspense fallback (Web Interface Guideline: Stable skeletons)
+function LoadingSkeleton() {
+  return (
+    <div className="flex h-screen" role="status" aria-label="Loading page">
+      <span className="sr-only">Loading…</span>
+      {/* Sidebar skeleton */}
+      <div className="w-72 bg-sidebar border-r border-border p-6 flex flex-col items-center" aria-hidden="true">
+        <div className="w-[120px] h-[120px] rounded-full bg-muted animate-pulse" />
+        <div className="mt-4 h-6 w-32 bg-muted rounded animate-pulse" />
+        <div className="mt-2 h-4 w-48 bg-muted rounded animate-pulse" />
+      </div>
+      {/* Main content skeleton */}
+      <main className="flex flex-1 min-h-screen items-center justify-center" aria-hidden="true">
+        <div className="max-w-2xl w-full p-4 space-y-4">
+          <div className="h-10 w-64 mx-auto bg-muted rounded animate-pulse" />
+          <div className="h-6 w-80 mx-auto bg-muted rounded animate-pulse" />
+          <div className="grid gap-3 md:grid-cols-2 mt-8">
+            <div className="h-32 bg-card rounded-xl animate-pulse" />
+            <div className="h-32 bg-card rounded-xl animate-pulse" />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <HomeContent />
+    </Suspense>
   );
 }

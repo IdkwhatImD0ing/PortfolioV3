@@ -2,7 +2,7 @@
 
 import { useState, memo } from "react"
 import Image from "next/image"
-import { motion } from "motion/react"
+import { motion, useReducedMotion } from "motion/react"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
 
@@ -12,7 +12,7 @@ const educationData = [
         degree: "Master's in Computer Science + AI",
         duration: "August 2023 - May 2025",
         details: "Graduated with a specialization in Artificial Intelligence, focusing on advanced machine learning and AI applications.",
-        logo: "/usc.png?height=64&width=64",
+        logo: "/usc.png",
         color: "var(--primary)", // Primary color
     },
     {
@@ -20,7 +20,7 @@ const educationData = [
         degree: "Bachelor's in Computer Science",
         duration: "September 2020 - March 2023",
         details: "Completed undergraduate studies in Computer Science.",
-        logo: "/ucsc.png?height=64&width=64",
+        logo: "/ucsc.png",
         color: "var(--secondary)", // Secondary color
     },
     {
@@ -28,7 +28,7 @@ const educationData = [
         degree: "High School Diploma",
         duration: "2016 - 2020",
         details: "Completed secondary education with focus on college preparatory courses.",
-        logo: "/lynbrook.png?height=64&width=64",
+        logo: "/lynbrook.png",
         color: "var(--accent)", // Accent color
     },
 ]
@@ -59,6 +59,7 @@ const item = {
 
 function EducationPage() {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
+    const prefersReducedMotion = useReducedMotion()
 
     const toggleExpand = (index: number) => {
         setExpandedIndex(expandedIndex === index ? null : index)
@@ -101,6 +102,15 @@ function EducationPage() {
                                     <motion.div
                                         className="flex items-center p-6 cursor-pointer"
                                         onClick={() => toggleExpand(index)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault()
+                                                toggleExpand(index)
+                                            }
+                                        }}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-expanded={expandedIndex === index}
                                         whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
                                     >
                                         <div className="relative mr-6 shrink-0">
@@ -113,7 +123,7 @@ function EducationPage() {
                                             >
                                                 <motion.div
                                                     className="absolute inset-0 opacity-20"
-                                                    animate={{
+                                                    animate={prefersReducedMotion ? {} : {
                                                         background: [
                                                             `radial-gradient(circle at 50% 50%, ${edu.color}00, ${edu.color}50)`,
                                                             `radial-gradient(circle at 50% 50%, ${edu.color}50, ${edu.color}00)`,
