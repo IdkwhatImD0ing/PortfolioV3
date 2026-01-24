@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { motion, AnimatePresence } from "motion/react"
+import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 
 interface TranscriptEntry {
   role: "agent" | "user"
@@ -28,8 +28,9 @@ const VoiceChatSidebarComponent = ({
   isAgentTalking,
 }: VoiceChatSidebarProps) => {
   const [isPaused, setIsPaused] = useState(false)
-  const [waveformValues, setWaveformValues] = useState<number[]>(Array(10).fill(2))
+  const [waveformValues, setWaveformValues] = useState<number[]>(() => Array(10).fill(2))
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const prefersReducedMotion = useReducedMotion()
 
   // Simulate waveform animation when call is active and not paused
   useEffect(() => {
@@ -74,7 +75,7 @@ const VoiceChatSidebarComponent = ({
       <div className="p-6 flex flex-col items-center">
         <motion.div 
           className="relative"
-          animate={isAgentTalking ? {
+          animate={isAgentTalking && !prefersReducedMotion ? {
             scale: [1, 1.05, 1],
           } : {
             scale: 1
@@ -88,7 +89,7 @@ const VoiceChatSidebarComponent = ({
           {/* Glow effect when agent is talking */}
           <motion.div 
             className="absolute inset-0 rounded-full"
-            animate={isAgentTalking ? {
+            animate={isAgentTalking && !prefersReducedMotion ? {
               boxShadow: [
                 "0 0 20px rgba(var(--primary-rgb), 0.3)",
                 "0 0 40px rgba(var(--primary-rgb), 0.6)",
@@ -105,7 +106,7 @@ const VoiceChatSidebarComponent = ({
           />
           <Image
             src="/profile.webp"
-            alt="Portfolio Owner"
+            alt="Bill Zhang"
             width={120}
             height={120}
             className="rounded-full border-2 border-primary z-10 relative"
@@ -119,8 +120,10 @@ const VoiceChatSidebarComponent = ({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
               transition={{ duration: 0.3 }}
+              aria-label="Bill is speaking"
+              role="status"
             >
-              <Waveform size={20} className="text-background" />
+              <Waveform size={20} className="text-background" aria-hidden="true" />
             </motion.div>
           )}
         </motion.div>
@@ -131,8 +134,8 @@ const VoiceChatSidebarComponent = ({
 
       {/* Voice Activity Visualization */}
       {isCalling && !isPaused && (
-        <div className="px-6 py-2">
-          <div className="flex items-center justify-center h-8 gap-[2px]">
+        <div className="px-6 py-2" role="status" aria-label="Voice call active">
+          <div className="flex items-center justify-center h-8 gap-[2px]" aria-hidden="true">
             {waveformValues.map((value, index) => (
               <motion.div
                 key={index}
@@ -146,9 +149,11 @@ const VoiceChatSidebarComponent = ({
         </div>
       )}
 
-      {/* Transcript */}
+      {/* Transcript 
+          Note: For very long conversations, consider virtualizing this list with 'virtua' 
+          or similar library to maintain performance (Web Interface Guideline: Large lists) */}
       <ScrollArea ref={scrollAreaRef} className="grow px-4 py-2 transcript-container">
-        <div className="space-y-4">
+        <div className="space-y-4" aria-live="polite" aria-atomic="false">
           <AnimatePresence>
             {transcript.map((entry, index) => (
               <motion.div
@@ -178,8 +183,12 @@ const VoiceChatSidebarComponent = ({
                   {entry.content}
                 </div>
                 {entry.role === "user" && (
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                    <User size={16} className="text-secondary-foreground" />
+                  <div 
+                    className="shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
+                    aria-label="You"
+                    role="img"
+                  >
+                    <User size={16} className="text-secondary-foreground" aria-hidden="true" />
                   </div>
                 )}
               </motion.div>

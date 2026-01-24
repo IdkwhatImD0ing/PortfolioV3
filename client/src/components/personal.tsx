@@ -5,41 +5,42 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "motion/react"
 
+// Animation variants hoisted to module level
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring" as const, stiffness: 100 },
+  },
+}
+
+const glowVariants = {
+  idle: {
+    boxShadow: "0 0 10px rgba(162, 89, 255, 0.3)",
+  },
+  hover: {
+    boxShadow: "0 0 20px rgba(162, 89, 255, 0.6)",
+  },
+}
+
 function PersonalPage() {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     setLoaded(true)
   }, [])
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { type: "spring" as const, stiffness: 100 },
-    },
-  }
-
-  const glowVariants = {
-    idle: {
-      boxShadow: "0 0 10px rgba(162, 89, 255, 0.3)",
-    },
-    hover: {
-      boxShadow: "0 0 20px rgba(162, 89, 255, 0.6)",
-    },
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8 flex items-center justify-center overflow-hidden">
@@ -76,7 +77,7 @@ function PersonalPage() {
                 >
                   <div className="absolute inset-0 bg-linear-to-br from-primary/20 to-transparent rounded-full"></div>
                   <Image
-                    src="/profile.webp?height=250&width=250"
+                    src="/profile.webp"
                     alt="Bill Zhang"
                     width={220}
                     height={220}

@@ -98,6 +98,29 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Enhanced focus-visible styles for better accessibility (Web Interface Guideline: Clear focus) */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  
+  /* Ensure focus is visible on interactive elements */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(162, 89, 255, 0.2);
+  }
+  
+  /* Remove default focus for pointer users */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 /* Custom glow effects for the futuristic theme */
