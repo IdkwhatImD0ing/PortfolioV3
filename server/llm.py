@@ -31,7 +31,7 @@ from custom_types import (
     Utterance,
 )
 
-from prompts import begin_sentence, system_prompt
+from prompts import begin_sentence, voice_system_prompt, text_system_prompt
 from project_search import search_projects as search_projects_impl, get_project_by_id
 
 
@@ -303,8 +303,12 @@ def search_projects(query: str, message: str) -> str:
 
 
 class LlmClient:
-    def __init__(self, call_id: str, debug=None):
+    def __init__(self, call_id: str, mode: str = "voice", debug=None):
         self.call_id = call_id
+        self.mode = mode
+
+        # Select appropriate prompt based on mode
+        system_prompt = voice_system_prompt if mode == "voice" else text_system_prompt
 
         # Create the main agent with input guardrails
         self.agent = Agent(
@@ -351,14 +355,12 @@ class LlmClient:
         return messages
 
     def prepare_prompt(self, request: ResponseRequiredRequest):
-        prompt = [
-            {"role": "system", "content": system_prompt},
-        ]
+        # Note: System prompt is in self.agent.instructions, not here
+        # This method prepares the conversation messages from the transcript
         transcript_messages = self.convert_transcript_to_openai_messages(
             request.transcript
         )
-        for message in transcript_messages:
-            prompt.append(message)
+        prompt = list(transcript_messages)
 
         last_user_message = ""
         last_user_message_index = -1
@@ -397,9 +399,7 @@ class LlmClient:
         ]
 
     async def draft_response(self, request: ResponseRequiredRequest):
-        prompt = self.prepare_prompt(request)
-        # Remove the system message; Agent already has instructions
-        messages = [m for m in prompt if m.get("role") != "system"]
+        messages = self.prepare_prompt(request)
         response_id = request.response_id
 
         self._log(
@@ -547,3 +547,117 @@ class LlmClient:
             f"finalizing response_id={response_id} content_complete=True end_call=False",
             flush=True,
         )
+
+    async def draft_text_response(self, messages: List[dict]):
+        """
+        Generate a streaming response for text chat (non-voice).
+        Yields TextChatStreamChunk objects for SSE streaming.
+        
+        Args:
+            messages: List of message dicts with 'role' and 'content' keys
+        """
+        from custom_types import TextChatStreamChunk
+        
+        self._log(
+            f"draft_text_response: call_id={self.call_id} messages={len(messages)}",
+            flush=True,
+        )
+
+        # Handle empty messages case
+        if not messages:
+            messages = [{"role": "user", "content": "Hello"}]
+
+        # Add instruction to the last user message for text chat
+        # Encourage markdown formatting for better readability
+        processed_messages = []
+        for i, msg in enumerate(messages):
+            if i == len(messages) - 1 and msg.get("role") == "user":
+                processed_messages.append({
+                    "role": "user",
+                    "content": f"User question: {msg['content']}\n\nThis is a TEXT chat. Use markdown formatting: **bold** for emphasis, `code` for tech terms, and bullet points for lists."
+                })
+            else:
+                processed_messages.append(msg)
+
+        try:
+            result = Runner.run_streamed(self.agent, processed_messages)
+
+            async for event in result.stream_events():
+                if isinstance(event, RawResponsesStreamEvent):
+                    data = event.data
+                    if getattr(data, "type", "") == "response.output_text.delta":
+                        delta_content = getattr(data, "delta", "")
+                        if delta_content:
+                            yield TextChatStreamChunk(
+                                type="content",
+                                content=delta_content,
+                            )
+
+                elif isinstance(event, RunItemStreamEvent):
+                    if event.name == "tool_called":
+                        tool_call = event.item.raw_item
+                        name = getattr(tool_call, "name", "")
+                        args = getattr(tool_call, "arguments", "") or ""
+
+                        # Text mode: Don't inject tool message as content
+                        # The LLM will generate natural transition phrases
+                        # (Voice mode keeps message injection to mask latency)
+
+                        # Send navigation metadata
+                        if name == "display_homepage":
+                            yield TextChatStreamChunk(
+                                type="metadata",
+                                metadata={"type": "navigation", "page": "personal"}
+                            )
+                        elif name == "display_landing_page":
+                            yield TextChatStreamChunk(
+                                type="metadata",
+                                metadata={"type": "navigation", "page": "landing"}
+                            )
+                        elif name == "display_education_page":
+                            yield TextChatStreamChunk(
+                                type="metadata",
+                                metadata={"type": "navigation", "page": "education"}
+                            )
+                        elif name == "display_project":
+                            try:
+                                args_dict = json.loads(args) if args else {}
+                                project_id = args_dict.get("id", "")
+                                yield TextChatStreamChunk(
+                                    type="metadata",
+                                    metadata={
+                                        "type": "navigation",
+                                        "page": "project",
+                                        "project_id": project_id,
+                                    }
+                                )
+                            except:
+                                yield TextChatStreamChunk(
+                                    type="metadata",
+                                    metadata={"type": "navigation", "page": "project"}
+                                )
+
+        except Exception as e:
+            # Check if it's a guardrail tripwire trigger
+            if "InputGuardrailTripwireTriggered" in str(type(e).__name__):
+                self._log(f"Guardrail triggered: Request blocked due to security check")
+                yield TextChatStreamChunk(
+                    type="content",
+                    content="I can only share information about my background, education, projects, and professional experience. Feel free to ask me about my hackathon wins, work at RingCentral, or any of my technical projects!",
+                )
+                yield TextChatStreamChunk(type="done")
+                return
+
+            print(
+                f"Error in text chat stream: {e}\n{traceback.format_exc()}",
+                flush=True,
+            )
+            yield TextChatStreamChunk(
+                type="error",
+                content="An error occurred. Please try again.",
+            )
+            return
+
+        # Signal completion
+        yield TextChatStreamChunk(type="done")
+        self._log(f"text chat response complete", flush=True)

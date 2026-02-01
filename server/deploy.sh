@@ -10,21 +10,24 @@ CONCURRENCY="${CONCURRENCY:-200}"             # WS are long-lived; raise only if
 TIMEOUT="${TIMEOUT:-3600}"                    # seconds; Cloud Run supports up to 60m for WS
 KEEP_WARM="${KEEP_WARM:-0}"                   # 1 = keep 1 warm instance (no cold start), 0 = scale to zero
 ALLOW_UNAUTH="${ALLOW_UNAUTH:-1}"             # 1 = public URL
-KEY_FILE="${KEY_FILE:-./gcloud.json}"         # your SA key path
+KEY_FILE="${KEY_FILE:-./gcloud.json}"         # your SA key path (optional if using personal account)
 ### =================================
 
-echo "▶ Authenticating with service account key: $KEY_FILE"
-gcloud auth activate-service-account --key-file="$KEY_FILE"
+# Check if service account key exists, otherwise use personal account
+if [[ -f "$KEY_FILE" ]]; then
+  echo "▶ Authenticating with service account key: $KEY_FILE"
+  gcloud auth activate-service-account --key-file="$KEY_FILE"
+else
+  echo "▶ Using existing gcloud authentication (personal account)"
+  echo "  (Run 'gcloud auth login' if not authenticated)"
+fi
 
-SA_EMAIL="$(gcloud auth list --filter=status:ACTIVE --format='value(account)')"
-SA_RESOURCE="projects/${PROJECT_ID}/serviceAccounts/${SA_EMAIL}"
-echo "Using account: $SA_EMAIL"
-echo "Build SA resource: $SA_RESOURCE"
+ACTIVE_ACCOUNT="$(gcloud auth list --filter=status:ACTIVE --format='value(account)')"
+echo "Using account: $ACTIVE_ACCOUNT"
 
 echo "▶ Setting project & region…"
 gcloud --quiet config set project "$PROJECT_ID" >/dev/null
 gcloud --quiet config set run/region "$REGION" >/dev/null
-gcloud --quiet config set account "$SA_EMAIL" >/dev/null
 
 echo "▶ Enabling APIs (Run, Build, Artifact Registry)…"
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID" \
@@ -48,8 +51,6 @@ echo "▶ Deploying $SERVICE_NAME to Cloud Run (build from source)…"
 gcloud run deploy "$SERVICE_NAME" \
   --source . \
   --region "$REGION" \
-  --service-account "$SA_EMAIL" \
-  --build-service-account "$SA_RESOURCE" \
   --concurrency "$CONCURRENCY" \
   --min-instances "$MIN_INSTANCES" \
   --max-instances "$MAX_INSTANCES" \

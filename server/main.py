@@ -5,12 +5,13 @@ import traceback
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from concurrent.futures import TimeoutError as ConnectionTimeoutError
 from retell import Retell
 from custom_types import (
     ConfigResponse,
     ResponseRequiredRequest,
+    TextChatRequest,
 )
 from typing import Optional
 from socket_manager import manager
@@ -61,6 +62,8 @@ validate_environment_variables()
 app = FastAPI()
 origins = [
     "http://localhost:3000",
+    "https://art3m1s.me",
+    "https://www.art3m1s.me",
 ]
 
 app.add_middleware(
@@ -77,6 +80,42 @@ retell = Retell(api_key=os.getenv("RETELL_API_KEY"))
 @app.get("/ping")
 async def ping():
     return {"message": "pong"}
+
+
+@app.post("/chat")
+async def chat_endpoint(request: TextChatRequest):
+    """
+    Text chat endpoint with SSE streaming.
+    Accepts messages and streams back responses using Server-Sent Events.
+    """
+    import uuid
+    
+    async def generate_sse():
+        # Create a unique session ID for this chat
+        session_id = str(uuid.uuid4())[:8]
+        llm_client = LlmClient(call_id=f"text-{session_id}", mode="text")
+        
+        # Convert TextChatMessage to dict format expected by LLM
+        messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+        
+        try:
+            async for chunk in llm_client.draft_text_response(messages):
+                # Format as SSE
+                data = json.dumps(chunk.model_dump())
+                yield f"data: {data}\n\n"
+        except Exception as e:
+            error_data = json.dumps({"type": "error", "content": str(e)})
+            yield f"data: {error_data}\n\n"
+    
+    return StreamingResponse(
+        generate_sse(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        }
+    )
 
 
 # Handle webhook from Retell server. This is used to receive events from Retell server.
@@ -125,7 +164,7 @@ async def websocket_handler(websocket: WebSocket, call_id: str):
         print(f"Attempting to accept websocket for call_id={call_id}")
         await websocket.accept()
         print("WebSocket accepted", call_id)
-        llm_client = LlmClient(call_id)
+        llm_client = LlmClient(call_id, mode="voice")
         call_metadata = None  # Will store metadata from call_details
 
         # Send optional config to Retell server

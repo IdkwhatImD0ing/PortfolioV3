@@ -2,9 +2,13 @@
 
 import { useState, useEffect, useRef, memo } from "react"
 import Image from "next/image"
-import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform, MessageSquare, Send, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 
 interface TranscriptEntry {
@@ -13,11 +17,22 @@ interface TranscriptEntry {
 }
 
 interface VoiceChatSidebarProps {
+  // Voice chat props
   isCalling: boolean
   startCall: () => void
   endCall: () => void
-  transcript: TranscriptEntry[]
   isAgentTalking: boolean
+  
+  // Shared state
+  transcript: TranscriptEntry[]
+  
+  // Mode switching props
+  chatMode: "voice" | "text"
+  setChatMode: (mode: "voice" | "text") => void
+  
+  // Text chat props
+  sendTextMessage: (content: string) => void
+  isTextLoading: boolean
 }
 
 const VoiceChatSidebarComponent = ({
@@ -26,11 +41,24 @@ const VoiceChatSidebarComponent = ({
   endCall,
   transcript,
   isAgentTalking,
+  chatMode,
+  setChatMode,
+  sendTextMessage,
+  isTextLoading,
 }: VoiceChatSidebarProps) => {
   const [isPaused, setIsPaused] = useState(false)
   const [waveformValues, setWaveformValues] = useState<number[]>(() => Array(10).fill(2))
+  const [textInput, setTextInput] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const prefersReducedMotion = useReducedMotion()
+
+  // Focus input when switching to text mode
+  useEffect(() => {
+    if (chatMode === "text" && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [chatMode])
 
   // Simulate waveform animation when call is active and not paused
   useEffect(() => {
@@ -69,8 +97,32 @@ const VoiceChatSidebarComponent = ({
     setIsPaused(false)
   }
 
+  const handleSendMessage = () => {
+    if (textInput.trim() && !isTextLoading) {
+      sendTextMessage(textInput.trim())
+      setTextInput("")
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
+  const handleModeChange = (isTextMode: boolean) => {
+    // End voice call if switching to text mode while calling
+    if (isTextMode && isCalling) {
+      endCall()
+    }
+    setChatMode(isTextMode ? "text" : "voice")
+  }
+
   return (
-    <div className="flex flex-col h-screen w-72 bg-sidebar border-r border-border">
+    <div className={`flex flex-col h-screen bg-sidebar border-r border-border transition-all duration-300 ${
+      chatMode === "text" ? "w-96" : "w-72"
+    }`}>
       {/* Profile Section */}
       <div className="p-6 flex flex-col items-center">
         <motion.div 
@@ -128,12 +180,31 @@ const VoiceChatSidebarComponent = ({
           )}
         </motion.div>
 
-        <h2 className="text-foreground font-medium mt-4 text-lg">AI Voice Assistant</h2>
+        <h2 className="text-foreground font-medium mt-4 text-lg">AI Assistant</h2>
         <p className="text-sm text-muted-foreground">Ask about my projects & experience</p>
+        
+        {/* Mode Toggle */}
+        <div className="flex items-center justify-center gap-3 mt-4 p-2 bg-sidebar-accent/50 rounded-lg">
+          <Mic 
+            size={18} 
+            className={`transition-colors ${chatMode === "voice" ? "text-primary" : "text-muted-foreground"}`}
+            aria-hidden="true"
+          />
+          <Switch
+            checked={chatMode === "text"}
+            onCheckedChange={handleModeChange}
+            aria-label={`Switch to ${chatMode === "voice" ? "text" : "voice"} chat`}
+          />
+          <MessageSquare 
+            size={18} 
+            className={`transition-colors ${chatMode === "text" ? "text-primary" : "text-muted-foreground"}`}
+            aria-hidden="true"
+          />
+        </div>
       </div>
 
-      {/* Voice Activity Visualization */}
-      {isCalling && !isPaused && (
+      {/* Voice Activity Visualization - only show in voice mode */}
+      {chatMode === "voice" && isCalling && !isPaused && (
         <div className="px-6 py-2" role="status" aria-label="Voice call active">
           <div className="flex items-center justify-center h-8 gap-[2px]" aria-hidden="true">
             {waveformValues.map((value, index) => (
@@ -148,7 +219,7 @@ const VoiceChatSidebarComponent = ({
           </div>
         </div>
       )}
-
+      
       {/* Transcript 
           Note: For very long conversations, consider virtualizing this list with 'virtua' 
           or similar library to maintain performance (Web Interface Guideline: Large lists) */}
@@ -176,11 +247,17 @@ const VoiceChatSidebarComponent = ({
                 )}
                 <div
                   className={`p-3 rounded-lg max-w-[80%] ${entry.role === "agent"
-                    ? "bg-card text-card-foreground border border-border"
+                    ? "bg-card text-card-foreground border border-border prose-chat"
                     : "bg-primary text-primary-foreground"
                     }`}
                 >
-                  {entry.content}
+                  {entry.role === "agent" ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {entry.content}
+                    </ReactMarkdown>
+                  ) : (
+                    entry.content
+                  )}
                 </div>
                 {entry.role === "user" && (
                   <div 
@@ -194,44 +271,126 @@ const VoiceChatSidebarComponent = ({
               </motion.div>
             ))}
           </AnimatePresence>
+          
+          {/* Typing indicator - appears as agent message with animated dots */}
+          {chatMode === "text" && isTextLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start space-x-2 justify-start"
+            >
+              <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+                <Image
+                  src="/profile.webp"
+                  alt="Bill"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-3 rounded-lg bg-card border border-border">
+                <div className="flex gap-1" role="status" aria-label="AI is typing">
+                  <motion.span
+                    className="w-2 h-2 bg-muted-foreground rounded-full"
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                  />
+                  <motion.span
+                    className="w-2 h-2 bg-muted-foreground rounded-full"
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+                  />
+                  <motion.span
+                    className="w-2 h-2 bg-muted-foreground rounded-full"
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
       </ScrollArea>
 
-      {/* Microphone Controls */}
+      {/* Controls Section */}
       <div className="p-4 border-t border-border">
-        {!isCalling ? (
-          <Button
-            onClick={toggleCall}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-xl transition-all duration-300 hover:shadow-glow cursor-pointer"
-          >
-            <Mic className="mr-2 h-5 w-5" /> Start Voice Interaction
-          </Button>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={toggleCall}
-              variant="outline"
-              className={`w-full border-border hover:border-primary hover:bg-card ${isPaused ? "bg-card" : "bg-card/50"}`}
+        <AnimatePresence mode="wait">
+          {chatMode === "voice" ? (
+            <motion.div
+              key="voice-controls"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
-              {isPaused ? (
-                <>
-                  <Play className="mr-2 h-4 w-4 text-accent" /> Resume
-                </>
+              {!isCalling ? (
+                <Button
+                  onClick={toggleCall}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-xl transition-all duration-300 hover:shadow-glow cursor-pointer"
+                >
+                  <Mic className="mr-2 h-5 w-5" /> Start Voice Interaction
+                </Button>
               ) : (
-                <>
-                  <Pause className="mr-2 h-4 w-4 text-accent" /> Pause
-                </>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={toggleCall}
+                    variant="outline"
+                    className={`w-full border-border hover:border-primary hover:bg-card ${isPaused ? "bg-card" : "bg-card/50"}`}
+                  >
+                    {isPaused ? (
+                      <>
+                        <Play className="mr-2 h-4 w-4 text-accent" /> Resume
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="mr-2 h-4 w-4 text-accent" /> Pause
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleEndCall}
+                    variant="destructive"
+                    className="w-full bg-destructive/20 hover:bg-destructive/30 text-destructive hover:text-destructive-foreground border border-destructive/50"
+                  >
+                    <Square className="mr-2 h-4 w-4" /> End
+                  </Button>
+                </div>
               )}
-            </Button>
-            <Button
-              onClick={handleEndCall}
-              variant="destructive"
-              className="w-full bg-destructive/20 hover:bg-destructive/30 text-destructive hover:text-destructive-foreground border border-destructive/50"
+            </motion.div>
+          ) : (
+            <motion.div
+              key="text-controls"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex gap-2"
             >
-              <Square className="mr-2 h-4 w-4" /> End
-            </Button>
-          </div>
-        )}
+              <Input
+                ref={inputRef}
+                placeholder="Type a message..."
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isTextLoading}
+                className="flex-1 bg-sidebar-accent border-border focus:border-primary"
+                aria-label="Message input"
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={!textInput.trim() || isTextLoading}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-3"
+                aria-label="Send message"
+              >
+                {isTextLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

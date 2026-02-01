@@ -41,6 +41,8 @@ function HomeContent() {
   const [fullTranscript, setFullTranscript] = useState<TranscriptEntry[]>([]);
   const [isAgentTalking, setIsAgentTalking] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(initialProjectId);
+  const [chatMode, setChatMode] = useState<"voice" | "text">("voice");
+  const [isTextLoading, setIsTextLoading] = useState(false);
   const transcriptLock = useRef(false);
   const transcriptQueue = useRef<TranscriptEntry[][]>([]);
   
@@ -86,7 +88,7 @@ function HomeContent() {
   useEffect(() => {
     const pingServer = async () => {
       try {
-        await fetch('https://fastapi-ws-815644024160.us-west1.run.app/ping', {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ping`, {
           method: 'GET',
           mode: 'cors',
         });
@@ -339,6 +341,111 @@ function HomeContent() {
     retellClientRef.current?.stopCall();
   }, []);
 
+  // Handle navigation metadata from text chat responses
+  const handleNavigationMetadata = useCallback((metadata: NavigationMeta) => {
+    if (metadata.type === "navigation" && metadata.page) {
+      console.log(`Text chat navigation to: ${metadata.page}`);
+      setActivePage(metadata.page);
+      if (metadata.project_id) {
+        setCurrentProjectId(metadata.project_id);
+      }
+    }
+  }, []);
+
+  // Send a text message and handle streaming response
+  const sendTextMessage = useCallback(async (content: string) => {
+    if (!content.trim() || isTextLoading) return;
+
+    setIsTextLoading(true);
+
+    // Add user message to transcript
+    const userMessage: TranscriptEntry = { role: "user", content };
+    setFullTranscript(prev => [...prev, userMessage]);
+
+    // Prepare messages for API (include conversation history)
+    const messages = [...fullTranscript, userMessage].map(entry => ({
+      role: entry.role === "agent" ? "assistant" : entry.role,
+      content: entry.content,
+    }));
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      const decoder = new TextDecoder();
+      let agentContent = "";
+      let agentMessageAdded = false;
+
+      // Process SSE stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value, { stream: true });
+        const lines = text.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === "content" && data.content) {
+                agentContent += data.content;
+
+                // Update transcript with streaming content
+                setFullTranscript(prev => {
+                  if (!agentMessageAdded) {
+                    agentMessageAdded = true;
+                    return [...prev, { role: "agent", content: agentContent }];
+                  }
+                  // Update last agent message
+                  const updated = [...prev];
+                  if (updated.length > 0 && updated[updated.length - 1].role === "agent") {
+                    updated[updated.length - 1] = { role: "agent", content: agentContent };
+                  }
+                  return updated;
+                });
+              } else if (data.type === "metadata" && data.metadata) {
+                handleNavigationMetadata(data.metadata as NavigationMeta);
+              } else if (data.type === "error") {
+                toast({
+                  title: "Error",
+                  description: data.content || "An error occurred",
+                  variant: "destructive",
+                });
+              }
+            } catch {
+              // Ignore parse errors for incomplete chunks
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error sending text message:", error);
+      toast({
+        title: "Message Failed",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTextLoading(false);
+    }
+  }, [fullTranscript, isTextLoading, handleNavigationMetadata]);
+
   return (
     <ErrorBoundary>
       <div className="flex h-screen">
@@ -353,6 +460,10 @@ function HomeContent() {
             endCall={endCall}
             transcript={fullTranscript}
             isAgentTalking={isAgentTalking}
+            chatMode={chatMode}
+            setChatMode={setChatMode}
+            sendTextMessage={sendTextMessage}
+            isTextLoading={isTextLoading}
           />
         </ErrorBoundary>
         <main id="main-content" className="flex flex-1 min-h-screen items-center justify-center">
