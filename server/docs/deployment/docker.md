@@ -73,6 +73,14 @@ curl http://localhost:8080/ping
 
 ## Google Cloud Run
 
+### Production URLs
+
+| URL Type | Value |
+|----------|-------|
+| Default URL | `https://fastapi-ws-815644024160.us-west1.run.app` |
+| Service Name | `fastapi-ws` |
+| Region | `us-west1` |
+
 ### Prerequisites
 
 1. Google Cloud account

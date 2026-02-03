@@ -153,9 +153,13 @@ Pings backend on load to wake up Cloud Run:
 
 ```typescript
 useEffect(() => {
-  fetch('https://fastapi-ws-815644024160.us-west1.run.app/ping');
+  fetch(`${process.env.NEXT_PUBLIC_API_URL}/ping`);
 }, []);
 ```
+
+**Environment Variable:**
+- Local development: `NEXT_PUBLIC_API_URL=http://localhost:8000`
+- Production: `NEXT_PUBLIC_API_URL=https://fastapi-ws-815644024160.us-west1.run.app`
 
 ## Modifications
 
