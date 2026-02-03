@@ -95,3 +95,19 @@ class MetadataResponse(BaseModel):
 
 # CustomLlmResponse = Union[ConfigResponse | PingPongResponse | ResponseResponse]
 CustomLlmResponse = Union[ConfigResponse, PingPongResponse, ResponseResponse, MetadataResponse]
+
+
+# Text Chat Types (for non-voice chat interface)
+class TextChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class TextChatRequest(BaseModel):
+    messages: List[TextChatMessage]
+
+
+class TextChatStreamChunk(BaseModel):
+    type: Literal["content", "metadata", "done", "error"]
+    content: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
