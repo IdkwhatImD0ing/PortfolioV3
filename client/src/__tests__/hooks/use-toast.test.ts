@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { reducer } from '@/hooks/use-toast'
 
 // Test the reducer separately since the hook has side effects

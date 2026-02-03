@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { VoiceChatSidebar } from '@/components/app-sidebar'
 
@@ -8,6 +8,9 @@ vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
       <div {...props}>{children}</div>
+    ),
+    span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <span {...props}>{children}</span>
     ),
   },
   AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
@@ -154,7 +157,7 @@ describe('VoiceChatSidebar', () => {
     it('should show typing indicator when loading', () => {
       render(<VoiceChatSidebar {...defaultProps} chatMode="text" isTextLoading={true} />)
       
-      expect(screen.getByText('AI is typing...')).toBeInTheDocument()
+      expect(screen.getByRole('status', { name: 'AI is typing' })).toBeInTheDocument()
     })
 
     it('should clear input after sending', async () => {

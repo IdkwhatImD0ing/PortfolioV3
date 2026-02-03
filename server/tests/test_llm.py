@@ -207,9 +207,10 @@ class TestLlmClientPreparePrompt:
         
         result = client.prepare_prompt(request)
         
-        # Should have system message + transcript messages
+        # Should have transcript messages (system prompt is in agent.instructions, not here)
         assert len(result) >= 2
-        assert result[0]["role"] == "system"
+        assert result[0]["role"] == "assistant"  # agent -> assistant
+        assert result[1]["role"] == "user"
 
     @patch("llm.Agent")
     def test_prepare_prompt_reminder_required(self, mock_agent):
@@ -246,9 +247,8 @@ class TestLlmClientPreparePrompt:
         
         result = client.prepare_prompt(request)
         
-        # Should still have system message
-        assert len(result) >= 1
-        assert result[0]["role"] == "system"
+        # Empty transcript returns empty list (system prompt is in agent.instructions)
+        assert len(result) == 0
 
 
 class TestLlmClientPrepareFunctions:
