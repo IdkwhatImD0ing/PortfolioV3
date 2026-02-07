@@ -19,9 +19,28 @@ function cleanAuxFiles() {
   }
 }
 
+function hasPdflatex() {
+  try {
+    execSync("pdflatex --version", { stdio: "pipe" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function compileResume() {
   if (!existsSync(texFile)) {
     console.error("resume.tex not found at", texFile);
+    process.exit(1);
+  }
+
+  if (!hasPdflatex()) {
+    const pdfFile = resolve(publicDir, "resume.pdf");
+    if (existsSync(pdfFile)) {
+      console.log("pdflatex not found, using pre-compiled resume.pdf.");
+      return;
+    }
+    console.error("pdflatex not found and no pre-compiled resume.pdf exists.");
     process.exit(1);
   }
 
