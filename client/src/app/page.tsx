@@ -3,6 +3,7 @@
 import EducationPage from "@/components/education";
 import PersonalPage from "@/components/personal";
 import ProjectPage from "@/components/project";
+import ResumePage from "@/components/resume";
 import LandingPage from "@/components/LandingPage";
 import FallbackLink from "@/components/fallback-link";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
@@ -19,7 +20,7 @@ interface RegisterCallResponse {
 
 interface NavigationMeta {
   type: string;
-  page?: "landing" | "education" | "project" | "personal";
+  page?: "landing" | "education" | "project" | "personal" | "resume";
   project_id?: string;
 }
 
@@ -33,11 +34,11 @@ function HomeContent() {
   const router = useRouter();
   
   // Read initial state from URL
-  const initialPage = (searchParams.get('page') as "landing" | "education" | "project" | "personal") || "landing";
+  const initialPage = (searchParams.get('page') as "landing" | "education" | "project" | "personal" | "resume") || "landing";
   const initialProjectId = searchParams.get('projectId') || undefined;
 
   const [isCalling, setIsCalling] = useState(false);
-  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal">(initialPage);
+  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal" | "resume">(initialPage);
   const [fullTranscript, setFullTranscript] = useState<TranscriptEntry[]>([]);
   const [isAgentTalking, setIsAgentTalking] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(initialProjectId);
@@ -66,6 +67,7 @@ function HomeContent() {
       personal: "About Me | Bill Zhang",
       education: "Education | Bill Zhang",
       project: "Projects | Bill Zhang",
+      resume: "Resume | Bill Zhang",
     };
     document.title = pageTitles[activePage] || "Bill Zhang | AI Engineer Portfolio";
   }, [activePage]);
@@ -209,6 +211,9 @@ function HomeContent() {
               setCurrentProjectId(meta.project_id);
             }
             break;
+          case "resume":
+            setActivePage("resume");
+            break;
           default:
             console.log(`Unknown page: ${page}`);
         }
@@ -345,7 +350,7 @@ function HomeContent() {
   const handleNavigationMetadata = useCallback((metadata: NavigationMeta) => {
     if (metadata.type === "navigation" && metadata.page) {
       console.log(`Text chat navigation to: ${metadata.page}`);
-      setActivePage(metadata.page);
+      setActivePage(metadata.page as typeof activePage);
       if (metadata.project_id) {
         setCurrentProjectId(metadata.project_id);
       }
@@ -486,6 +491,7 @@ function HomeContent() {
             {activePage === "personal" && <PersonalPage />}
             {activePage === "education" && <EducationPage />}
             {activePage === "project" && <ProjectPage projectId={currentProjectId} />}
+            {activePage === "resume" && <ResumePage />}
           </ErrorBoundary>
         </main>
       </div>

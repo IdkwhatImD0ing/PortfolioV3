@@ -52,6 +52,26 @@ def display_homepage(message: str) -> str:
 {"type": "navigation", "page": "personal"}
 ```
 
+### display_resume_page
+
+Navigate to the resume page.
+
+```python
+@tool
+def display_resume_page(message: str) -> str:
+    """Displays Bill's resume page on the frontend.
+    
+    Args:
+        message: The message to speak before navigating
+    """
+    return "Successfully displayed the resume page"
+```
+
+**Metadata sent:**
+```json
+{"type": "navigation", "page": "resume"}
+```
+
 ### display_education_page
 
 Navigate to the education page.
@@ -150,6 +170,7 @@ def prepare_functions(self) -> List[Any]:
         display_education_page,
         display_homepage,
         display_landing_page,
+        display_resume_page,
         display_project,
         search_projects,
         get_project_details,
