@@ -145,6 +145,7 @@ async def security_guardrail(
         "developer",
         "software",
         "career",
+        "resume",
     ]
 
     # Quick checks for obviously blocked content
@@ -183,6 +184,16 @@ async def security_guardrail(
         output_info=output,
         tripwire_triggered=output.is_jailbreak,  # Trigger if it IS a jailbreak attempt
     )
+
+
+@tool
+def display_resume_page(message: str) -> str:
+    """Displays Bill's resume page on the frontend.
+
+    Args:
+        message: The message to speak before navigating (e.g. "Let me show you my resume")
+    """
+    return "Successfully displayed the resume page"
 
 
 @tool
@@ -393,6 +404,7 @@ class LlmClient:
             display_education_page,
             display_homepage,
             display_landing_page,
+            display_resume_page,
             display_project,
             search_projects,
             get_project_details,
@@ -446,6 +458,7 @@ class LlmClient:
                             "display_homepage",
                             "display_landing_page",
                             "display_education_page",
+                            "display_resume_page",
                             "display_project",
                             "search_projects",
                             "get_project_details",
@@ -482,6 +495,10 @@ class LlmClient:
                         elif name == "display_education_page":
                             yield MetadataResponse(
                                 metadata={"type": "navigation", "page": "education"}
+                            )
+                        elif name == "display_resume_page":
+                            yield MetadataResponse(
+                                metadata={"type": "navigation", "page": "resume"}
                             )
                         elif name == "display_project":
                             # Parse the arguments to get the project ID
@@ -618,6 +635,11 @@ class LlmClient:
                             yield TextChatStreamChunk(
                                 type="metadata",
                                 metadata={"type": "navigation", "page": "education"}
+                            )
+                        elif name == "display_resume_page":
+                            yield TextChatStreamChunk(
+                                type="metadata",
+                                metadata={"type": "navigation", "page": "resume"}
                             )
                         elif name == "display_project":
                             try:

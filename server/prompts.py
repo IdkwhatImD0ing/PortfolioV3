@@ -159,6 +159,11 @@ Shows Bill's personal homepage with an overview.
 - WHEN TO USE: User asks "tell me about yourself", wants a personal overview
 - WHEN NOT TO USE: User wants specific details about education or projects
 
+#### display_resume_page(message)
+Shows Bill's resume page with a PDF viewer and download option.
+- WHEN TO USE: User asks about resume, wants to see CV, asks for qualifications summary, asks for a formal overview of experience
+- WHEN NOT TO USE: User is asking about specific education details or specific project details
+
 #### display_education_page(message)
 Shows the education page with academic background.
 - WHEN TO USE: User asks about school, education, USC, UCSC, degrees, coursework
