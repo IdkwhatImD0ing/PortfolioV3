@@ -138,7 +138,7 @@ function MobileLayoutComponent({
       </header>
 
       {/* Page Content with Transitions */}
-      <main className="flex-1 overflow-y-auto pb-[160px]">
+      <main className="flex-1 overflow-y-auto pb-[160px] overscroll-y-contain">
         <AnimatePresence mode="wait">
           <motion.div
             key={activePage}
@@ -177,7 +177,7 @@ function MobileLayoutComponent({
 
       {/* Bottom Panel */}
       <div
-        className="fixed inset-x-0 bottom-0 z-50 flex flex-col overflow-hidden bg-background border-t border-border rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-[height] duration-300 ease-in-out"
+        className="fixed inset-x-0 bottom-0 z-50 flex flex-col overflow-hidden bg-background border-t border-border rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.12)] transition-[height] duration-300 ease-in-out overscroll-contain"
         style={{ height: isExpanded ? '55dvh' : '160px' }}
       >
         {/* Handle + Toggle */}
@@ -196,8 +196,8 @@ function MobileLayoutComponent({
         {/* Transcript - always in DOM, visibility toggled via CSS */}
         <div
           ref={scrollRef}
-          className={`overflow-y-auto px-4 py-2 min-h-0 flex-1 transition-opacity duration-200 ${
-            isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          className={`px-4 py-2 min-h-0 flex-1 transition-opacity duration-200 ${
+            isExpanded ? 'overflow-y-auto opacity-100' : 'overflow-hidden opacity-0 pointer-events-none'
           }`}
         >
             <div className="space-y-3" aria-live="polite" aria-atomic="false">

@@ -9,7 +9,7 @@ Documentation for the mobile-specific layout used on viewports <= 768px.
 
 ## Purpose
 
-Replaces the desktop sidebar layout with a mobile-optimized experience using a bottom drawer (vaul) for chat and full-screen animated page transitions.
+Replaces the desktop sidebar layout with a mobile-optimized experience using a custom bottom drawer panel for chat and full-screen animated page transitions.
 
 ## Architecture
 
@@ -22,7 +22,7 @@ MobileLayout
 │   ├── EducationPage
 │   ├── ProjectPage
 │   └── ResumePage
-└── Bottom Drawer (vaul)
+└── Bottom Drawer (custom CSS transition)
     ├── Drag Handle
     ├── Transcript (when expanded)
     └── MobileControlBar
@@ -48,23 +48,30 @@ MobileLayout
 | `sendTextMessage` | `(content: string) => void` | Send text message |
 | `isTextLoading` | `boolean` | Text response loading |
 
-## Bottom Drawer (vaul)
+## Bottom Drawer
 
-Uses vaul directly (not the shadcn wrapper) with `modal={false}` so content remains interactive behind the drawer.
+Uses a custom fixed-position panel with CSS `transition-[height]` to animate between collapsed and expanded states. Content remains interactive behind the drawer since it is not a modal overlay.
 
-### Snap Points
+### Height States
 
-| Snap Point | Height | When Used |
-|------------|--------|-----------|
-| `"148px"` | Control bar only | Default in voice mode; after page navigation |
-| `0.55` | 55% viewport | Default in text mode; transcript visible |
-| `0.9` | 90% viewport | Full transcript view (user-dragged) |
+| State | Height | When Used |
+|-------|--------|-----------|
+| Collapsed | `160px` | Default in voice mode; after page navigation |
+| Expanded | `55dvh` | Default in text mode; transcript visible |
 
-### Auto-Snap Behavior
+### Auto-Expand/Collapse Behavior
 
-- **Mode change to text**: Auto-expands to 55%
-- **Mode change to voice**: Auto-collapses to 148px
-- **Page navigation**: Auto-collapses to 148px + shows toast notification
+- **Mode change to text**: Auto-expands to 55dvh
+- **Mode change to voice**: Auto-collapses to 160px
+- **Page navigation**: Auto-collapses to 160px + shows toast notification
+
+## Scroll Containment
+
+The mobile layout uses multiple scroll containers (main content and the transcript inside the bottom drawer). To prevent mobile browsers from locking scroll onto the wrong container, the following containment pattern is applied:
+
+- **Main content** (`<main>`): `overflow-y-auto` + `overscroll-y-contain` prevents scroll chaining from the page content into the fixed bottom panel.
+- **Bottom panel**: `overflow-hidden` + `overscroll-contain` prevents its scroll events from propagating to the main content.
+- **Transcript area**: `overflow-y-auto` only when the drawer is expanded. When collapsed, switches to `overflow-hidden` (along with `opacity-0` and `pointer-events-none`) to fully remove it from the browser's scroll chain. This prevents mobile Safari/Chrome from targeting the hidden transcript as a scroll container, which could cause the main content scroll to appear "stuck."
 
 ## Page Transitions
 
