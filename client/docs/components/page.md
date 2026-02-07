@@ -138,14 +138,36 @@ Merges new transcript entries with existing, preventing duplicates:
 - Queues updates (`transcriptQueue`)
 - Deduplicates by role + content
 
-## Mobile Redirect
+## Mobile Layout
+
+Instead of redirecting mobile users, the page detects mobile viewport via `useIsMobile()` (768px breakpoint) and renders `MobileLayout` with all the same state props:
 
 ```typescript
-useEffect(() => {
-  const isMobile = /Android|webOS|iPhone|iPad|.../i.test(navigator.userAgent);
-  if (isMobile) window.location.href = 'https://v2.art3m1s.me';
-}, []);
+const isMobile = useIsMobile();
+
+if (isMobile) {
+  return (
+    <ErrorBoundary>
+      <MobileLayout
+        activePage={activePage}
+        setActivePage={setActivePage}
+        currentProjectId={currentProjectId}
+        isCalling={isCalling}
+        startCall={startCall}
+        endCall={endCall}
+        isAgentTalking={isAgentTalking}
+        transcript={fullTranscript}
+        chatMode={chatMode}
+        setChatMode={setChatMode}
+        sendTextMessage={sendTextMessage}
+        isTextLoading={isTextLoading}
+      />
+    </ErrorBoundary>
+  );
+}
 ```
+
+All state management remains in `page.tsx`; the `MobileLayout` component handles only rendering. See [mobile-layout.md](mobile-layout.md) for details.
 
 ## Server Ping
 
@@ -198,6 +220,7 @@ client.on("error", (error) => {
 
 ## Related Files
 
-- [app-sidebar.md](app-sidebar.md) - Voice chat UI child component
+- [app-sidebar.md](app-sidebar.md) - Voice chat UI child component (desktop)
+- [mobile-layout.md](mobile-layout.md) - Mobile layout with bottom drawer
 - [../api/create-web-call.md](../api/create-web-call.md) - API endpoint called
 - [../pages/](../pages/) - Page components rendered

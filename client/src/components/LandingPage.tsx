@@ -2,15 +2,21 @@
 
 import { memo } from "react"
 import { motion, useReducedMotion } from "motion/react"
-import { Mic, MousePointer, Keyboard, ArrowLeft } from "lucide-react"
+import Image from "next/image"
+import { Mic, MousePointer, Keyboard, ArrowLeft, ArrowDown, FileText } from "lucide-react"
 
-function LandingPage() {
+interface LandingPageProps {
+  onNavigate?: (page: string) => void
+  isMobile?: boolean
+}
+
+function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
   const prefersReducedMotion = useReducedMotion()
   
   return (
-    <div className="h-screen bg-background flex overflow-hidden">
+    <div className={`${isMobile ? 'min-h-full' : 'h-screen'} bg-background flex ${isMobile ? '' : 'overflow-hidden'}`}>
       {/* Main Content Area */}
-      <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
+      <div className={`flex-1 flex items-center justify-center p-4 ${isMobile ? 'py-6' : 'overflow-y-auto'}`}>
         <div className="max-w-2xl text-center space-y-4">
           {/* Header */}
           <motion.div
@@ -155,20 +161,71 @@ function LandingPage() {
             </div>
           </motion.div>
 
+          {/* Quick Reference Links */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.55 }}
+            className="space-y-2"
+          >
+            <p className="text-sm text-muted-foreground">Quick Reference</p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => onNavigate?.("resume")}
+                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200 cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-primary/70 group-hover:text-primary transition-colors" />
+                <span>Resume</span>
+              </button>
+              <a
+                href="https://github.com/IdkwhatImD0ing/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200"
+              >
+                <Image src="/github.svg" alt="" width={16} height={16} className="opacity-70 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+                <span>GitHub</span>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/bill-zhang1/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200"
+              >
+                <Image src="/linkedin.svg" alt="" width={16} height={16} className="opacity-70 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+                <span>LinkedIn</span>
+              </a>
+            </div>
+          </motion.div>
+
           {/* Call to Action */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
+            transition={{ duration: 0.8, delay: 0.65 }}
             className="flex items-center justify-center gap-2 text-primary"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-base font-medium">Begin your voice journey</span>
-            <motion.div
-              animate={prefersReducedMotion ? {} : { x: [-5, 5, -5] }}
-              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              className="w-2 h-2 bg-primary rounded-full"
-            ></motion.div>
+            {isMobile ? (
+              <>
+                <ArrowDown className="w-4 h-4" />
+                <span className="text-base font-medium">Start chatting below</span>
+                <motion.div
+                  animate={prefersReducedMotion ? {} : { y: [-3, 3, -3] }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                  className="w-2 h-2 bg-primary rounded-full"
+                ></motion.div>
+              </>
+            ) : (
+              <>
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-base font-medium">Begin your voice journey</span>
+                <motion.div
+                  animate={prefersReducedMotion ? {} : { x: [-5, 5, -5] }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                  className="w-2 h-2 bg-primary rounded-full"
+                ></motion.div>
+              </>
+            )}
           </motion.div>
 
           {/* Ambient Elements */}

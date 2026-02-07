@@ -12,7 +12,10 @@ The initial page users see when visiting the portfolio. Introduces the voice-dri
 
 ## Props
 
-None - this is a standalone component.
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `onNavigate` | `(page: string) => void` | No | Callback to navigate to another page (e.g. "resume") |
+| `isMobile` | `boolean` | No | When true, adapts layout for mobile (scrollable, downward CTA). Defaults to `false`. |
 
 ## Usage
 
@@ -44,9 +47,25 @@ This sends a metadata event:
 - When user asks to "go back" or "start over"
 - When `?page=` query param is not set or is "landing"
 
-## Mobile Redirect
+## Mobile Behavior
 
-Users on mobile devices are automatically redirected to `v2.art3m1s.me` before seeing this page.
+On mobile devices, the landing page renders natively instead of redirecting. Key differences from desktop:
+
+- **Layout**: Uses `min-h-full` instead of `h-screen` so the page scrolls naturally within the mobile content area
+- **CTA**: The "Begin your voice journey" with a left arrow changes to "Start chatting below" with a downward arrow, pointing toward the bottom drawer control bar
+- **Padding**: Extra vertical padding (`py-6`) is applied to avoid content being clipped by the bottom drawer
+
+The `isMobile` prop controls these adaptations and is set to `true` by `MobileLayout.tsx`.
+
+## Quick Reference Links
+
+A "Quick Reference" section sits between the example questions and the CTA. It provides direct access to key resources without needing to interact with the chat:
+
+- **Resume** — Navigates to the resume page via `onNavigate("resume")`
+- **GitHub** — Opens `https://github.com/IdkwhatImD0ing/` in a new tab
+- **LinkedIn** — Opens `https://www.linkedin.com/in/bill-zhang1/` in a new tab
+
+Each link is styled as a rounded pill with an icon and label. GitHub and LinkedIn icons use the SVGs from `/public/`. The section animates in with the same `motion.div` pattern as the rest of the page (delay: 0.55s).
 
 ## Modifications
 
@@ -55,6 +74,7 @@ Users on mobile devices are automatically redirected to `v2.art3m1s.me` before s
 Edit `src/components/LandingPage.tsx` directly. The component uses:
 - Tailwind CSS for styling
 - Motion (Framer Motion) for animations
+- `next/image` for SVG icons in the Quick Reference section
 
 ### Add New CTA Button
 
@@ -65,6 +85,10 @@ Edit `src/components/LandingPage.tsx` directly. The component uses:
 ```
 
 Note: The `startCall` function is passed from the parent `page.tsx`.
+
+### Update Quick Reference Links
+
+Edit the Quick Reference section in `src/components/LandingPage.tsx`. Each link is a standard `<a>` tag with icon and label. To add a new link, duplicate an existing pill and update the `href`, icon, and label.
 
 ## Related Files
 
