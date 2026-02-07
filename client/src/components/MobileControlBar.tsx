@@ -22,6 +22,7 @@ export default function MobileControlBar({
   isCalling,
   startCall,
   endCall,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isAgentTalking,
   chatMode,
   setChatMode,
