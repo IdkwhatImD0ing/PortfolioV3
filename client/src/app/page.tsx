@@ -10,6 +10,8 @@ import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { RetellWebClient as RetellWebClientType } from "retell-client-js-sdk";
 import { VoiceChatSidebar } from "@/components/app-sidebar";
+import MobileLayout from "@/components/MobileLayout";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/hooks/use-toast";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -72,19 +74,7 @@ function HomeContent() {
     document.title = pageTitles[activePage] || "Bill Zhang | AI Engineer Portfolio";
   }, [activePage]);
 
-  // Mobile detection and redirect
-  useEffect(() => {
-    const checkMobile = () => {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        (window.innerWidth <= 768);
-
-      if (isMobile) {
-        window.location.href = 'https://v2.art3m1s.me';
-      }
-    };
-
-    checkMobile();
-  }, []);
+  const isMobile = useIsMobile();
 
   // Ping FastAPI server on page load
   useEffect(() => {
@@ -451,6 +441,31 @@ function HomeContent() {
     }
   }, [fullTranscript, isTextLoading, handleNavigationMetadata]);
 
+  if (isMobile === undefined) {
+    return <LoadingSkeleton />;
+  }
+
+  if (isMobile) {
+    return (
+      <ErrorBoundary>
+        <MobileLayout
+          activePage={activePage}
+          setActivePage={setActivePage}
+          currentProjectId={currentProjectId}
+          isCalling={isCalling}
+          startCall={startCall}
+          endCall={endCall}
+          isAgentTalking={isAgentTalking}
+          transcript={fullTranscript}
+          chatMode={chatMode}
+          setChatMode={setChatMode}
+          sendTextMessage={sendTextMessage}
+          isTextLoading={isTextLoading}
+        />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div className="flex h-screen">
@@ -471,7 +486,7 @@ function HomeContent() {
             isTextLoading={isTextLoading}
           />
         </ErrorBoundary>
-        <main id="main-content" className="flex flex-1 min-h-screen items-center justify-center">
+        <main id="main-content" className={`flex flex-1 min-h-screen ${activePage === "resume" ? "items-stretch" : "items-center justify-center"}`}>
           <ErrorBoundary fallback={
             <div className="text-center p-8">
               <h2 className="text-xl font-bold text-red-600 mb-2">Page Error</h2>
@@ -485,7 +500,7 @@ function HomeContent() {
             </div>
           }>
             {activePage === "landing" && <div className="relative">
-              <LandingPage />
+              <LandingPage onNavigate={(page) => setActivePage(page as typeof activePage)} />
               <FallbackLink href="https://v2.art3m1s.me" />
             </div>}
             {activePage === "personal" && <PersonalPage />}
@@ -502,16 +517,24 @@ function HomeContent() {
 // Loading skeleton component for Suspense fallback (Web Interface Guideline: Stable skeletons)
 function LoadingSkeleton() {
   return (
-    <div className="flex h-screen" role="status" aria-label="Loading page">
+    <div className="flex flex-col md:flex-row h-screen" role="status" aria-label="Loading page">
       <span className="sr-only">Loading…</span>
-      {/* Sidebar skeleton */}
-      <div className="w-72 bg-sidebar border-r border-border p-6 flex flex-col items-center" aria-hidden="true">
+      {/* Mobile header skeleton */}
+      <div className="flex md:hidden items-center gap-3 px-4 py-3 border-b border-border" aria-hidden="true">
+        <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+        <div className="space-y-1">
+          <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+          <div className="h-3 w-12 bg-muted rounded animate-pulse" />
+        </div>
+      </div>
+      {/* Sidebar skeleton - desktop only */}
+      <div className="hidden md:flex w-72 bg-sidebar border-r border-border p-6 flex-col items-center" aria-hidden="true">
         <div className="w-[120px] h-[120px] rounded-full bg-muted animate-pulse" />
         <div className="mt-4 h-6 w-32 bg-muted rounded animate-pulse" />
         <div className="mt-2 h-4 w-48 bg-muted rounded animate-pulse" />
       </div>
       {/* Main content skeleton */}
-      <main className="flex flex-1 min-h-screen items-center justify-center" aria-hidden="true">
+      <main className="flex flex-1 min-h-0 items-center justify-center" aria-hidden="true">
         <div className="max-w-2xl w-full p-4 space-y-4">
           <div className="h-10 w-64 mx-auto bg-muted rounded animate-pulse" />
           <div className="h-6 w-80 mx-auto bg-muted rounded animate-pulse" />

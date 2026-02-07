@@ -7,9 +7,9 @@ import { Download } from "lucide-react"
 
 function ResumePage() {
     return (
-        <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="min-h-screen w-full bg-background text-foreground py-8 px-6 lg:px-12">
             <motion.div
-                className="max-w-4xl w-full h-[85vh] flex flex-col"
+                className="w-full h-[90vh] flex flex-col"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8 }}
@@ -53,7 +53,7 @@ function ResumePage() {
                     transition={{ delay: 0.2, duration: 0.6 }}
                 >
                     <iframe
-                        src="/resume.pdf"
+                        src="/resume.pdf#navpanes=0&view=FitH"
                         title="Bill Zhang Resume"
                         className="w-full h-full"
                         style={{ minHeight: "100%" }}
