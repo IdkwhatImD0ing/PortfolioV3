@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
@@ -33,4 +33,4 @@ jobs:
             - Test coverage
             
             Be constructive and helpful in your feedback.
-          claude_args: "--model claude-sonnet-4-5-20250929 --max-turns 10"
+          claude_args: "--model claude-sonnet-4-5-20250929 --max-turns 30"
