@@ -14,6 +14,11 @@ KEY_FILE="${KEY_FILE:-./gcloud.json}"         # your SA key path (optional if us
 ### =================================
 
 # Check if service account key exists, otherwise use personal account
+# Fallback to parent directory if not found in current
+if [[ ! -f "$KEY_FILE" && -f "../$(basename "$KEY_FILE")" ]]; then
+  KEY_FILE="../$(basename "$KEY_FILE")"
+fi
+
 if [[ -f "$KEY_FILE" ]]; then
   echo "▶ Authenticating with service account key: $KEY_FILE"
   gcloud auth activate-service-account --key-file="$KEY_FILE"
