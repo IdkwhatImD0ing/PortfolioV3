@@ -2,7 +2,7 @@ import json
 import os
 from typing import List, Dict
 from dotenv import load_dotenv
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import Pinecone
 from openai import OpenAI
 
 load_dotenv()
