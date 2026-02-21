@@ -2,6 +2,7 @@ import json
 import os
 import asyncio
 import traceback
+import uuid
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -88,7 +89,6 @@ async def chat_endpoint(request: TextChatRequest):
     Text chat endpoint with SSE streaming.
     Accepts messages and streams back responses using Server-Sent Events.
     """
-    import uuid
     
     async def generate_sse():
         # Create a unique session ID for this chat
