@@ -197,6 +197,16 @@ def display_resume_page(message: str) -> str:
 
 
 @tool
+def display_guestbook_page(message: str) -> str:
+    """Displays the guestbook page on the frontend where users can sign and view messages.
+
+    Args:
+        message: The message to speak before navigating (e.g. "Let me show you the guestbook")
+    """
+    return "Successfully displayed the guestbook page"
+
+
+@tool
 def display_education_page(message: str) -> str:
     """Displays the education page on the frontend.
 
@@ -405,6 +415,7 @@ class LlmClient:
             display_homepage,
             display_landing_page,
             display_resume_page,
+            display_guestbook_page,
             display_project,
             search_projects,
             get_project_details,
@@ -459,6 +470,7 @@ class LlmClient:
                             "display_landing_page",
                             "display_education_page",
                             "display_resume_page",
+                            "display_guestbook_page",
                             "display_project",
                             "search_projects",
                             "get_project_details",
@@ -499,6 +511,10 @@ class LlmClient:
                         elif name == "display_resume_page":
                             yield MetadataResponse(
                                 metadata={"type": "navigation", "page": "resume"}
+                            )
+                        elif name == "display_guestbook_page":
+                            yield MetadataResponse(
+                                metadata={"type": "navigation", "page": "guestbook"}
                             )
                         elif name == "display_project":
                             # Parse the arguments to get the project ID
@@ -640,6 +656,11 @@ class LlmClient:
                             yield TextChatStreamChunk(
                                 type="metadata",
                                 metadata={"type": "navigation", "page": "resume"}
+                            )
+                        elif name == "display_guestbook_page":
+                            yield TextChatStreamChunk(
+                                type="metadata",
+                                metadata={"type": "navigation", "page": "guestbook"}
                             )
                         elif name == "display_project":
                             try:

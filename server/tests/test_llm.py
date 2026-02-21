@@ -260,7 +260,8 @@ class TestLlmClientPrepareFunctions:
         client = LlmClient(call_id="test", mode="voice")
         tools = client.prepare_functions()
         
-        assert len(tools) == 7
+        assert len(tools) == 8
         # Check that all expected tool names are present
         tool_names = [getattr(t, "__name__", str(t)) for t in tools]
         assert "display_education_page" in tool_names or any("education" in str(t) for t in tools)
+        assert "display_guestbook_page" in tool_names or any("guestbook" in str(t) for t in tools)
