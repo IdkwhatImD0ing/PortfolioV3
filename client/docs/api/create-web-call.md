@@ -79,7 +79,7 @@ interface RetellAIResponse {
 
 ```typescript
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
@@ -104,6 +104,7 @@ const response = await axios.post(
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
+| `NEXT_PUBLIC_APP_URL` | Yes | Allowed origin for CORS (frontend URL) |
 | `RETELLAI_API_KEY` | Yes | Retell API authentication (server-side only) |
 
 ## Client Usage
@@ -160,13 +161,11 @@ body: JSON.stringify({
 
 ### Restrict CORS
 
-For production, update CORS headers:
+For production, ensure `NEXT_PUBLIC_APP_URL` is set to your production domain:
 
 ```typescript
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://yourdomain.com',
-  // ...
-};
+// In .env.production
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
 ```
 
 ## Related Files

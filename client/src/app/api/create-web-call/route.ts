@@ -6,7 +6,8 @@ import { CreateWebCallRequest, RetellAIResponse } from '@/types/api';
 
 // Define CORS headers
 const corsHeaders = {
-    'Access-Control-Allow-Origin': '*', // Adjust this in production for security
+    // Restrict origin in production for security
+    'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
