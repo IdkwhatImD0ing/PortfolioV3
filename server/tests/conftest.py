@@ -21,7 +21,12 @@ def mock_openai_embeddings():
     with patch("project_search.openai_client") as mock_client:
         mock_response = MagicMock()
         mock_response.data = [MagicMock(embedding=[0.1] * 3072)]  # 3072-dim for text-embedding-3-large
-        mock_client.embeddings.create.return_value = mock_response
+
+        # Async mock for create
+        async def async_create(*args, **kwargs):
+            return mock_response
+
+        mock_client.embeddings.create.side_effect = async_create
         yield mock_client
 
 
