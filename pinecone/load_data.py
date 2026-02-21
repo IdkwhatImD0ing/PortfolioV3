@@ -24,13 +24,20 @@ def get_embedding(text: str) -> List[float]:
     return response.data[0].embedding
 
 
+def get_embeddings(texts: List[str]) -> List[List[float]]:
+    """Generate embeddings for a list of texts in a single batch call."""
+    if not texts:
+        return []
+    response = openai_client.embeddings.create(model=EMBEDDING_MODEL, input=texts)
+    return [d.embedding for d in response.data]
+
+
 def prepare_vectors(data: List[Dict]) -> List[tuple]:
     """Prepare vectors for Pinecone upsert."""
-    vectors = []
 
+    # Pre-generate all text contents for batch embedding
+    texts_to_embed = []
     for item in data:
-        project_id = item["id"]
-
         text_content = f"""
         Project: {item['name']}
         
@@ -40,8 +47,15 @@ def prepare_vectors(data: List[Dict]) -> List[tuple]:
         Details:
         {item['details']}
         """
+        texts_to_embed.append(text_content)
 
-        embedding = get_embedding(text_content)
+    print(f"Generating embeddings for {len(texts_to_embed)} items in batch...")
+    all_embeddings = get_embeddings(texts_to_embed)
+
+    vectors = []
+    for i, item in enumerate(data):
+        project_id = item["id"]
+        embedding = all_embeddings[i]
 
         metadata = {
             "id": project_id,
