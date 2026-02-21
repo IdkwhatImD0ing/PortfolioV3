@@ -242,7 +242,7 @@ def display_project(id: str, message: str) -> str:
 
 
 @tool
-def get_project_details(project_id: str, message: str) -> str:
+async def get_project_details(project_id: str, message: str) -> str:
     """
     Get full details about a specific project by its ID.
     Use this after searching to get complete information about a project.
@@ -255,7 +255,7 @@ def get_project_details(project_id: str, message: str) -> str:
         Full project details including name, summary, and complete details
     """
     try:
-        project = get_project_by_id(project_id)
+        project = await get_project_by_id(project_id)
 
         if not project:
             return f"Could not find project with ID: {project_id}"
@@ -276,7 +276,7 @@ def get_project_details(project_id: str, message: str) -> str:
 
 
 @tool
-def search_projects(query: str, message: str) -> str:
+async def search_projects(query: str, message: str) -> str:
     """
     Search for Bill Zhang's projects based on a query. Returns summaries only.
     Use this when users ask about specific types of projects, technologies, or want to know what Bill has worked on.
@@ -290,7 +290,7 @@ def search_projects(query: str, message: str) -> str:
         String description of matching projects with id, name, and summary only
     """
     try:
-        results = search_projects_impl(query, top_k=3)
+        results = await search_projects_impl(query, top_k=3)
 
         if not results:
             return "No projects found matching that query."
