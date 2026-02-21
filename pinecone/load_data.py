@@ -2,7 +2,7 @@ import json
 import os
 from typing import List, Dict
 from dotenv import load_dotenv
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import Pinecone
 from openai import OpenAI
 
 load_dotenv()
@@ -20,28 +20,37 @@ EMBEDDING_DIMENSIONS = 3072
 
 def get_embedding(text: str) -> List[float]:
     """Generate embedding for text using OpenAI's text-embedding-3-large model."""
-    response = openai_client.embeddings.create(model=EMBEDDING_MODEL, input=text)
-    return response.data[0].embedding
+    return get_embeddings([text])[0]
+
+
+def get_embeddings(texts: List[str]) -> List[List[float]]:
+    """Generate embeddings for a list of texts using OpenAI's text-embedding-3-large model."""
+    response = openai_client.embeddings.create(model=EMBEDDING_MODEL, input=texts)
+    return [item.embedding for item in response.data]
 
 
 def prepare_vectors(data: List[Dict]) -> List[tuple]:
     """Prepare vectors for Pinecone upsert."""
-    vectors = []
-
+    texts_to_embed = []
     for item in data:
-        project_id = item["id"]
-
         text_content = f"""
-        Project: {item['name']}
+        Project: {item["name"]}
         
         Summary:
-        {item['summary']}
+        {item["summary"]}
         
         Details:
-        {item['details']}
+        {item["details"]}
         """
+        texts_to_embed.append(text_content)
 
-        embedding = get_embedding(text_content)
+    print(f"Generating embeddings for {len(texts_to_embed)} items in batch...")
+    embeddings = get_embeddings(texts_to_embed)
+
+    vectors = []
+    for i, item in enumerate(data):
+        project_id = item["id"]
+        embedding = embeddings[i]
 
         metadata = {
             "id": project_id,
