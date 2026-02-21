@@ -43,8 +43,8 @@ stop:
 deploy:
 	@echo "Deploying to Cloud Run..."
 	@cd server && uv run python -c "print('Deploying...')"
-	@dos2unix deploy.sh
-	@bash deploy.sh
+	@cd server && dos2unix deploy.sh
+	@cd server && bash deploy.sh
 
 # Clean up processes
 clean: stop
