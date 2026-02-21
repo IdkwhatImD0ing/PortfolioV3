@@ -111,3 +111,7 @@ class TextChatStreamChunk(BaseModel):
     type: Literal["content", "metadata", "done", "error"]
     content: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+
+
+class SummaryRequest(BaseModel):
+    transcript: List[TextChatMessage]
