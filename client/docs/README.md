@@ -47,6 +47,7 @@ src/
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `NEXT_PUBLIC_API_URL` | Yes | Backend API URL (e.g., `http://localhost:8000` for dev, `https://fastapi-ws-815644024160.us-west1.run.app` for prod) |
+| `NEXT_PUBLIC_APP_URL` | Yes | Frontend application URL (used for CORS restriction) |
 | `NEXT_PUBLIC_RETELL_AGENT_ID` | Yes | Retell agent identifier (client-side) |
 | `RETELLAI_API_KEY` | Yes | Retell API key (server-side only) |
 
