@@ -112,7 +112,7 @@ function GuestbookPage() {
         variants={containerVariants}
       >
         <motion.div className="mb-6 flex-shrink-0" variants={itemVariants}>
-          <h1 className="text-4xl font-bold bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Guestbook
           </h1>
           <p className="text-muted-foreground mt-2">
