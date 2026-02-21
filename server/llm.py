@@ -29,6 +29,7 @@ from custom_types import (
     ToolCallInvocationResponse,
     ToolCallResultResponse,
     Utterance,
+    TextChatMessage,
 )
 
 from prompts import begin_sentence, voice_system_prompt, text_system_prompt
@@ -242,7 +243,7 @@ def display_project(id: str, message: str) -> str:
 
 
 @tool
-def get_project_details(project_id: str, message: str) -> str:
+async def get_project_details(project_id: str, message: str) -> str:
     """
     Get full details about a specific project by its ID.
     Use this after searching to get complete information about a project.
@@ -255,7 +256,7 @@ def get_project_details(project_id: str, message: str) -> str:
         Full project details including name, summary, and complete details
     """
     try:
-        project = get_project_by_id(project_id)
+        project = await get_project_by_id(project_id)
 
         if not project:
             return f"Could not find project with ID: {project_id}"
@@ -276,7 +277,7 @@ def get_project_details(project_id: str, message: str) -> str:
 
 
 @tool
-def search_projects(query: str, message: str) -> str:
+async def search_projects(query: str, message: str) -> str:
     """
     Search for Bill Zhang's projects based on a query. Returns summaries only.
     Use this when users ask about specific types of projects, technologies, or want to know what Bill has worked on.
@@ -290,7 +291,7 @@ def search_projects(query: str, message: str) -> str:
         String description of matching projects with id, name, and summary only
     """
     try:
-        results = search_projects_impl(query, top_k=3)
+        results = await search_projects_impl(query, top_k=3)
 
         if not results:
             return "No projects found matching that query."
@@ -683,3 +684,47 @@ class LlmClient:
         # Signal completion
         yield TextChatStreamChunk(type="done")
         self._log(f"text chat response complete", flush=True)
+
+
+async def generate_summary(transcript: List[TextChatMessage]) -> str:
+    """
+    Generate a recruiter-focused summary of the conversation.
+    """
+    # Convert Pydantic models to dicts for the LLM
+    messages = [{"role": msg.role, "content": msg.content} for msg in transcript]
+
+    # Create a specialized agent for summarization
+    summary_agent = Agent(
+        name="summary_agent",
+        instructions="""You are an expert technical recruiter's assistant. Your task is to analyze the conversation
+        transcript between a user (recruiter/visitor) and Bill Zhang's AI portfolio assistant.
+
+        Generate a 'Recruiter Cheat Sheet' based on the conversation. The output must be in Markdown format
+        and include the following sections:
+
+        ## 📋 Recruiter Cheat Sheet
+
+        ### 🎯 Key Takeaways
+        - [Bullet points of main topics discussed]
+
+        ### 🛠️ Skills & Technologies
+        - [List of technical skills mentioned or demonstrated]
+
+        ### 🚀 Relevant Projects
+        - [List of projects discussed with brief context]
+
+        ### 💡 Why Interview Bill?
+        - [A short, compelling pitch based on the conversation highlights]
+
+        If the conversation was short or lacked substance, provide a general summary of who Bill is based on his portfolio context,
+        but prioritize the actual conversation content. Keep it professional, concise, and easy to read.""",
+        model="gpt-4o-mini",
+    )
+
+    try:
+        # Run the agent to get a single response
+        result = await Runner.run(summary_agent, messages)
+        return result.final_output
+    except Exception as e:
+        print(f"Error generating summary: {e}")
+        return "## Error\n\nFailed to generate summary. Please try again."

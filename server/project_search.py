@@ -1,8 +1,9 @@
 import os
+import asyncio
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
 from pinecone import Pinecone
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 load_dotenv()
 
@@ -10,7 +11,7 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 INDEX_NAME = "portfolio"
 EMBEDDING_MODEL = "text-embedding-3-large"
@@ -24,15 +25,15 @@ def get_index():
         _index = pc.Index(INDEX_NAME)
     return _index
 
-def get_embedding(text: str) -> List[float]:
+async def get_embedding(text: str) -> List[float]:
     """Generate embedding for text using OpenAI's text-embedding-3-large model."""
-    response = openai_client.embeddings.create(
+    response = await openai_client.embeddings.create(
         model=EMBEDDING_MODEL,
         input=text
     )
     return response.data[0].embedding
 
-def search_projects(query: str, top_k: int = 3) -> List[Dict]:
+async def search_projects(query: str, top_k: int = 3) -> List[Dict]:
     """
     Search for Bill Zhang's projects using semantic search.
     
@@ -45,17 +46,21 @@ def search_projects(query: str, top_k: int = 3) -> List[Dict]:
     """
     try:
         # Get embedding for the query
-        query_embedding = get_embedding(query)
+        query_embedding = await get_embedding(query)
         
         # Connect to Pinecone index
-        index = get_index()
-        
-        # Query Pinecone for similar projects
-        results = index.query(
-            vector=query_embedding,
-            top_k=top_k,
-            include_metadata=True
-        )
+        # Use run_in_executor for blocking Pinecone calls
+        loop = asyncio.get_running_loop()
+
+        def _query_pinecone():
+            index = get_index()
+            return index.query(
+                vector=query_embedding,
+                top_k=top_k,
+                include_metadata=True
+            )
+
+        results = await loop.run_in_executor(None, _query_pinecone)
         
         # Format results for return
         projects = []
@@ -82,7 +87,7 @@ def search_projects(query: str, top_k: int = 3) -> List[Dict]:
         print(f"Error searching projects: {e}")
         return []
 
-def get_project_by_id(project_id: str) -> Optional[Dict]:
+async def get_project_by_id(project_id: str) -> Optional[Dict]:
     """
     Fetch a specific project by its ID.
     
@@ -93,10 +98,13 @@ def get_project_by_id(project_id: str) -> Optional[Dict]:
         Project dictionary with metadata or None if not found
     """
     try:
-        index = get_index()
+        loop = asyncio.get_running_loop()
         
-        # Fetch the specific vector
-        fetch_result = index.fetch(ids=[project_id])
+        def _fetch_project():
+            index = get_index()
+            return index.fetch(ids=[project_id])
+
+        fetch_result = await loop.run_in_executor(None, _fetch_project)
         
         if project_id in fetch_result.vectors:
             vector_data = fetch_result.vectors[project_id]
@@ -123,7 +131,7 @@ def get_project_by_id(project_id: str) -> Optional[Dict]:
         print(f"Error fetching project {project_id}: {e}")
         return None
 
-def find_similar_projects(project_id: str, top_k: int = 3) -> List[Dict]:
+async def find_similar_projects(project_id: str, top_k: int = 3) -> List[Dict]:
     """
     Find projects similar to a given project.
     
@@ -135,22 +143,30 @@ def find_similar_projects(project_id: str, top_k: int = 3) -> List[Dict]:
         List of similar project dictionaries
     """
     try:
-        index = get_index()
+        loop = asyncio.get_running_loop()
         
-        # Fetch the project's vector
-        fetch_result = index.fetch(ids=[project_id])
+        def _find_similar():
+            index = get_index()
+
+            # Fetch the project's vector
+            fetch_result = index.fetch(ids=[project_id])
+
+            if project_id not in fetch_result.vectors:
+                return None
+
+            vector = fetch_result.vectors[project_id]
+
+            # Query for similar projects, excluding the original
+            return index.query(
+                vector=vector.values,
+                top_k=top_k + 1,  # Get one extra in case we need to filter out the original
+                include_metadata=True
+            )
+
+        results = await loop.run_in_executor(None, _find_similar)
         
-        if project_id not in fetch_result.vectors:
+        if results is None:
             return []
-        
-        vector = fetch_result.vectors[project_id]
-        
-        # Query for similar projects, excluding the original
-        results = index.query(
-            vector=vector.values,
-            top_k=top_k + 1,  # Get one extra in case we need to filter out the original
-            include_metadata=True
-        )
         
         # Format results, excluding the original project
         similar_projects = []
