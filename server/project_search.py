@@ -15,6 +15,15 @@ openai_client = OpenAI(api_key=OPENAI_API_KEY)
 INDEX_NAME = "portfolio"
 EMBEDDING_MODEL = "text-embedding-3-large"
 
+_index = None
+
+def get_index():
+    """Get or create the Pinecone index instance."""
+    global _index
+    if _index is None:
+        _index = pc.Index(INDEX_NAME)
+    return _index
+
 def get_embedding(text: str) -> List[float]:
     """Generate embedding for text using OpenAI's text-embedding-3-large model."""
     response = openai_client.embeddings.create(
@@ -39,7 +48,7 @@ def search_projects(query: str, top_k: int = 3) -> List[Dict]:
         query_embedding = get_embedding(query)
         
         # Connect to Pinecone index
-        index = pc.Index(INDEX_NAME)
+        index = get_index()
         
         # Query Pinecone for similar projects
         results = index.query(
@@ -84,7 +93,7 @@ def get_project_by_id(project_id: str) -> Optional[Dict]:
         Project dictionary with metadata or None if not found
     """
     try:
-        index = pc.Index(INDEX_NAME)
+        index = get_index()
         
         # Fetch the specific vector
         fetch_result = index.fetch(ids=[project_id])
@@ -126,7 +135,7 @@ def find_similar_projects(project_id: str, top_k: int = 3) -> List[Dict]:
         List of similar project dictionaries
     """
     try:
-        index = pc.Index(INDEX_NAME)
+        index = get_index()
         
         # Fetch the project's vector
         fetch_result = index.fetch(ids=[project_id])
