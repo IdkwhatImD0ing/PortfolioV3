@@ -68,8 +68,8 @@ class TestSearchProjects:
         
         await search_projects("test", top_k=5)
         
-        mock_pinecone.query.assert_called_once()
-        call_kwargs = mock_pinecone.query.call_args.kwargs
+        mock_pinecone.query.assert_awaited_once()
+        call_kwargs = mock_pinecone.query.await_args.kwargs
         assert call_kwargs["top_k"] == 5
 
     @pytest.mark.asyncio

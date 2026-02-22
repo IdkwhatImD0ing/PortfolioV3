@@ -22,7 +22,6 @@ def mock_openai_embeddings():
         mock_response = MagicMock()
         mock_response.data = [MagicMock(embedding=[0.1] * 3072)]  # 3072-dim for text-embedding-3-large
 
-        # Async mock for create
         async def async_create(*args, **kwargs):
             return mock_response
 
@@ -32,11 +31,12 @@ def mock_openai_embeddings():
 
 @pytest.fixture
 def mock_pinecone():
-    """Mock Pinecone client and index."""
+    """Mock Pinecone async client and index."""
     with patch("project_search.pc") as mock_pc:
         mock_index = MagicMock()
-        mock_pc.Index.return_value = mock_index
-        
+        mock_index.query = AsyncMock()
+        mock_index.fetch = AsyncMock()
+
         # Mock query results
         mock_match = MagicMock()
         mock_match.id = "test-project"
@@ -47,18 +47,23 @@ def mock_pinecone():
             "details": "This is a detailed description of the test project.",
             "github": "https://github.com/test/project",
         }
-        
+
         mock_query_result = MagicMock()
         mock_query_result.matches = [mock_match]
         mock_index.query.return_value = mock_query_result
-        
+
         # Mock fetch results
         mock_vector = MagicMock()
         mock_vector.metadata = mock_match.metadata
         mock_fetch_result = MagicMock()
         mock_fetch_result.vectors = {"test-project": mock_vector}
         mock_index.fetch.return_value = mock_fetch_result
-        
+
+        mock_context = AsyncMock()
+        mock_context.__aenter__.return_value = mock_index
+        mock_context.__aexit__.return_value = None
+        mock_pc.IndexAsyncio.return_value = mock_context
+
         yield mock_index
 
 
@@ -116,7 +121,6 @@ def mock_websocket():
 @pytest.fixture
 def app_client():
     """Create a test client for the FastAPI app."""
-    # Import app inside fixture to ensure env vars are set
     from main import app
     return TestClient(app)
 
