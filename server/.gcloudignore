@@ -1,0 +1,14 @@
+.gcloudignore
+.git
+.gitignore
+__pycache__/
+*.pyc
+.env
+*.env
+gcloud.json
+*.json.bak
+tests/
+docs/
+*.md
+.pytest_cache/
+.mypy_cache/
