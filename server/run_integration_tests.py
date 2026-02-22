@@ -474,7 +474,7 @@ async def test_error_scenarios(client: LlmClient):
     return True
 
 
-async def main(args):
+async def main(args) -> int:
     """Run all integration tests."""
     # Configure output and LLM debug
     set_colors_enabled(not getattr(args, "no_color", False))
@@ -490,7 +490,7 @@ async def main(args):
     )
 
     # Check environment variables
-    required_vars = ["OPENAI_API_KEY"]
+    required_vars = ["OPENAI_API_KEY", "PINECONE_API_KEY"]
     missing = [var for var in required_vars if not os.environ.get(var)]
 
     if missing:
@@ -498,7 +498,7 @@ async def main(args):
         for var in missing:
             print(f"   - {var}")
         print(f"\n{Colors.YELLOW}Set these variables and try again.{Colors.END}")
-        return
+        return 1
 
     print(f"\n{Colors.GREEN}[OK] All environment variables present{Colors.END}")
 
@@ -508,7 +508,7 @@ async def main(args):
         print(f"{Colors.GREEN}[OK] LLM Client initialized{Colors.END}")
     except Exception as e:
         print(f"{Colors.RED}[FAIL] Failed to initialize: {e}{Colors.END}")
-        return
+        return 1
 
     # Run tests
     tests = [
@@ -566,6 +566,7 @@ async def main(args):
     print(
         f"\n{Colors.YELLOW}Finished at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{Colors.END}"
     )
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":
@@ -589,4 +590,4 @@ if __name__ == "__main__":
             colorama.just_fix_windows_console()
         except Exception:
             pass
-    asyncio.run(main(args))
+    raise SystemExit(asyncio.run(main(args)))
