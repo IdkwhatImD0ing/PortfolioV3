@@ -25,6 +25,7 @@ def get_index():
         _index = pc.Index(INDEX_NAME)
     return _index
 
+
 async def get_embedding(text: str) -> List[float]:
     """Generate embedding for text using OpenAI's text-embedding-3-large model."""
     response = await openai_client.embeddings.create(
