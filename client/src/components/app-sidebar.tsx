@@ -4,11 +4,19 @@ import { useState, useEffect, useRef, memo } from "react"
 import Image from "next/image"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform, MessageSquare, Send, Loader2 } from "lucide-react"
+import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform, MessageSquare, Send, Loader2, FileText, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 
 interface TranscriptEntry {
@@ -49,6 +57,11 @@ const VoiceChatSidebarComponent = ({
   const [isPaused, setIsPaused] = useState(false)
   const [waveformValues, setWaveformValues] = useState<number[]>(() => Array(10).fill(2))
   const [textInput, setTextInput] = useState("")
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryContent, setSummaryContent] = useState("")
+  const [isCopied, setIsCopied] = useState(false)
+
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const prefersReducedMotion = useReducedMotion()
@@ -118,6 +131,49 @@ const VoiceChatSidebarComponent = ({
     }
     setChatMode(isTextMode ? "text" : "voice")
   }
+
+  const handleGenerateSummary = async () => {
+    if (transcript.length === 0) {
+      setSummaryContent("Start a conversation to generate a summary.")
+      return
+    }
+
+    setSummaryLoading(true)
+    try {
+      // Use the API URL from environment or default to relative path for proxy
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
+      const response = await fetch(`${apiUrl}/summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transcript }),
+      })
+
+      if (!response.ok) throw new Error('Failed to generate summary')
+
+      const data = await response.json()
+      setSummaryContent(data.summary)
+    } catch (error) {
+      console.error('Error generating summary:', error)
+      setSummaryContent("Failed to generate summary. Please try again.")
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
+
+  const handleCopySummary = () => {
+    navigator.clipboard.writeText(summaryContent)
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000)
+  }
+
+  // Generate summary when dialog opens if content is empty
+  useEffect(() => {
+    if (isSummaryOpen && !summaryContent && transcript.length > 0) {
+      handleGenerateSummary()
+    }
+  }, [isSummaryOpen])
 
   return (
     <div className={`flex flex-col h-screen bg-sidebar border-r border-border transition-all duration-300 ${
@@ -201,6 +257,62 @@ const VoiceChatSidebarComponent = ({
             aria-hidden="true"
           />
         </div>
+
+        {/* Recruiter Cheat Sheet Button */}
+        <Dialog open={isSummaryOpen} onOpenChange={setIsSummaryOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4 w-full gap-2 text-xs border-primary/20 hover:border-primary/50"
+            >
+              <FileText className="h-3 w-3" />
+              Recruiter Cheat Sheet
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col bg-card border-border">
+            <DialogHeader>
+              <DialogTitle>Recruiter Cheat Sheet</DialogTitle>
+              <DialogDescription>
+                AI-generated summary of our conversation for your notes.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-y-auto p-4 bg-muted/30 rounded-md border border-border mt-2">
+              {summaryLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Generating summary...</p>
+                </div>
+              ) : (
+                <div className="prose prose-invert prose-sm max-w-none prose-headings:text-primary prose-a:text-blue-400">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {summaryContent}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-4 gap-2">
+               <Button
+                variant="outline"
+                onClick={() => handleGenerateSummary()}
+                disabled={summaryLoading}
+                className="gap-2"
+              >
+                Regenerate
+              </Button>
+              <Button
+                onClick={handleCopySummary}
+                disabled={summaryLoading || !summaryContent}
+                className="gap-2"
+              >
+                {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {isCopied ? "Copied" : "Copy to Clipboard"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Voice Activity Visualization - only show in voice mode */}

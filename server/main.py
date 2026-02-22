@@ -2,6 +2,7 @@ import json
 import os
 import asyncio
 import traceback
+import uuid
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,10 +13,11 @@ from custom_types import (
     ConfigResponse,
     ResponseRequiredRequest,
     TextChatRequest,
+    SummaryRequest,
 )
 from typing import Optional
 from socket_manager import manager
-from llm import LlmClient
+from llm import LlmClient, generate_summary
 
 
 load_dotenv(override=True)
@@ -88,7 +90,6 @@ async def chat_endpoint(request: TextChatRequest):
     Text chat endpoint with SSE streaming.
     Accepts messages and streams back responses using Server-Sent Events.
     """
-    import uuid
     
     async def generate_sse():
         # Create a unique session ID for this chat
@@ -116,6 +117,21 @@ async def chat_endpoint(request: TextChatRequest):
             "X-Accel-Buffering": "no",  # Disable nginx buffering
         }
     )
+
+
+@app.post("/summary")
+async def summary_endpoint(request: SummaryRequest):
+    """
+    Generate a recruiter-focused summary of the conversation.
+    """
+    try:
+        summary = await generate_summary(request.transcript)
+        return {"summary": summary}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 
 
 # Handle webhook from Retell server. This is used to receive events from Retell server.
