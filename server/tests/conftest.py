@@ -15,6 +15,18 @@ os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
 os.environ.setdefault("PINECONE_API_KEY", "test-pinecone-key")
 
 
+@pytest.fixture(autouse=True)
+def reset_pinecone_index():
+    """Reset the global Pinecone index in project_search after each test."""
+    try:
+        import project_search
+        yield
+        project_search._index = None
+    except ImportError:
+        # If project_search cannot be imported, just yield
+        yield
+
+
 @pytest.fixture
 def mock_openai_embeddings():
     """Mock OpenAI embeddings API."""

@@ -16,6 +16,16 @@ openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 INDEX_NAME = "portfolio"
 EMBEDDING_MODEL = "text-embedding-3-large"
 
+_index = None
+
+def get_index():
+    """Get or create the Pinecone index instance."""
+    global _index
+    if _index is None:
+        _index = pc.Index(INDEX_NAME)
+    return _index
+
+
 async def get_embedding(text: str) -> List[float]:
     """Generate embedding for text using OpenAI's text-embedding-3-large model."""
     response = await openai_client.embeddings.create(
@@ -42,9 +52,9 @@ async def search_projects(query: str, top_k: int = 3) -> List[Dict]:
         # Connect to Pinecone index
         # Use run_in_executor for blocking Pinecone calls
         loop = asyncio.get_running_loop()
-        
+
         def _query_pinecone():
-            index = pc.Index(INDEX_NAME)
+            index = get_index()
             return index.query(
                 vector=query_embedding,
                 top_k=top_k,
@@ -92,7 +102,7 @@ async def get_project_by_id(project_id: str) -> Optional[Dict]:
         loop = asyncio.get_running_loop()
         
         def _fetch_project():
-            index = pc.Index(INDEX_NAME)
+            index = get_index()
             return index.fetch(ids=[project_id])
 
         fetch_result = await loop.run_in_executor(None, _fetch_project)
@@ -137,7 +147,7 @@ async def find_similar_projects(project_id: str, top_k: int = 3) -> List[Dict]:
         loop = asyncio.get_running_loop()
         
         def _find_similar():
-            index = pc.Index(INDEX_NAME)
+            index = get_index()
 
             # Fetch the project's vector
             fetch_result = index.fetch(ids=[project_id])
