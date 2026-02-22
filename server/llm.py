@@ -17,6 +17,7 @@ from agents import (
     function_tool as tool,
     input_guardrail,
     ModelSettings,
+    trace,
 )
 from openai.types.shared import Reasoning
 
@@ -436,115 +437,121 @@ class LlmClient:
             messages = [{"role": "user", "content": "Hello"}]
 
         try:
-            # Runner.run_streamed returns a RunResultStreaming object synchronously
-            # The guardrails will be checked automatically before the agent runs
-            result = Runner.run_streamed(self.agent, messages)
+            # Create an explicit trace for this response so analytics can be grouped by call/session.
+            with trace(
+                workflow_name="portfolio_voice_response",
+                group_id=self.call_id,
+                metadata={"mode": self.mode, "response_id": str(response_id)},
+            ):
+                # Runner.run_streamed returns a RunResultStreaming object synchronously
+                # The guardrails will be checked automatically before the agent runs
+                result = Runner.run_streamed(self.agent, messages)
 
-            async for event in result.stream_events():
-                if isinstance(event, RawResponsesStreamEvent):
-                    data = event.data
-                    if getattr(data, "type", "") == "response.output_text.delta":
-                        # For streaming, pass through the delta as-is
-                        # The AI has been instructed not to use markdown in the prompts
-                        delta_content = getattr(data, "delta", "")
-                        if delta_content:
-                            yield ResponseResponse(
-                                response_id=response_id,
-                                content=delta_content,
-                                content_complete=False,
-                                end_call=False,
+                async for event in result.stream_events():
+                    if isinstance(event, RawResponsesStreamEvent):
+                        data = event.data
+                        if getattr(data, "type", "") == "response.output_text.delta":
+                            # For streaming, pass through the delta as-is
+                            # The AI has been instructed not to use markdown in the prompts
+                            delta_content = getattr(data, "delta", "")
+                            if delta_content:
+                                yield ResponseResponse(
+                                    response_id=response_id,
+                                    content=delta_content,
+                                    content_complete=False,
+                                    end_call=False,
+                                )
+
+                    elif isinstance(event, RunItemStreamEvent):
+                        if event.name == "tool_called":
+                            tool_call = event.item.raw_item
+                            call_id = getattr(
+                                tool_call, "call_id", getattr(tool_call, "id", "")
+                            )
+                            name = getattr(tool_call, "name", "")
+                            args = getattr(tool_call, "arguments", "") or ""
+
+                            # Parse arguments to get the message parameter if it exists
+                            message_to_speak = None
+                            if name in [
+                                "display_homepage",
+                                "display_landing_page",
+                                "display_education_page",
+                                "display_resume_page",
+                                "display_guestbook_page",
+                                "display_project",
+                                "search_projects",
+                                "get_project_details",
+                            ]:
+                                try:
+                                    args_dict = json.loads(args) if args else {}
+                                    message_to_speak = args_dict.get("message")
+
+                                    # If message is provided, yield it as a response first
+                                    if message_to_speak:
+                                        yield ResponseResponse(
+                                            response_id=response_id,
+                                            content=message_to_speak + " ",
+                                            content_complete=False,
+                                            end_call=False,
+                                        )
+                                except:
+                                    pass
+
+                            yield ToolCallInvocationResponse(
+                                tool_call_id=call_id,
+                                name=name,
+                                arguments=args,
                             )
 
-                elif isinstance(event, RunItemStreamEvent):
-                    if event.name == "tool_called":
-                        tool_call = event.item.raw_item
-                        call_id = getattr(
-                            tool_call, "call_id", getattr(tool_call, "id", "")
-                        )
-                        name = getattr(tool_call, "name", "")
-                        args = getattr(tool_call, "arguments", "") or ""
-
-                        # Parse arguments to get the message parameter if it exists
-                        message_to_speak = None
-                        if name in [
-                            "display_homepage",
-                            "display_landing_page",
-                            "display_education_page",
-                            "display_resume_page",
-                            "display_guestbook_page",
-                            "display_project",
-                            "search_projects",
-                            "get_project_details",
-                        ]:
-                            try:
-                                args_dict = json.loads(args) if args else {}
-                                message_to_speak = args_dict.get("message")
-
-                                # If message is provided, yield it as a response first
-                                if message_to_speak:
-                                    yield ResponseResponse(
-                                        response_id=response_id,
-                                        content=message_to_speak + " ",
-                                        content_complete=False,
-                                        end_call=False,
+                            if name == "display_homepage":
+                                yield MetadataResponse(
+                                    metadata={"type": "navigation", "page": "personal"}
+                                )
+                            elif name == "display_landing_page":
+                                yield MetadataResponse(
+                                    metadata={"type": "navigation", "page": "landing"}
+                                )
+                            elif name == "display_education_page":
+                                yield MetadataResponse(
+                                    metadata={"type": "navigation", "page": "education"}
+                                )
+                            elif name == "display_resume_page":
+                                yield MetadataResponse(
+                                    metadata={"type": "navigation", "page": "resume"}
+                                )
+                            elif name == "display_guestbook_page":
+                                yield MetadataResponse(
+                                    metadata={"type": "navigation", "page": "guestbook"}
+                                )
+                            elif name == "display_project":
+                                # Parse the arguments to get the project ID
+                                try:
+                                    args_dict = json.loads(args) if args else {}
+                                    project_id = args_dict.get("id", "")
+                                    yield MetadataResponse(
+                                        metadata={
+                                            "type": "navigation",
+                                            "page": "project",
+                                            "project_id": project_id,
+                                        }
                                     )
-                            except:
+                                except:
+                                    yield MetadataResponse(
+                                        metadata={"type": "navigation", "page": "project"}
+                                    )
+                            elif name == "search_projects":
+                                # For search_projects, we might want to send the results as metadata
+                                # but since the function returns text, we'll let it be handled normally
                                 pass
 
-                        yield ToolCallInvocationResponse(
-                            tool_call_id=call_id,
-                            name=name,
-                            arguments=args,
-                        )
-
-                        if name == "display_homepage":
-                            yield MetadataResponse(
-                                metadata={"type": "navigation", "page": "personal"}
+                        elif event.name == "tool_output":
+                            output_item = event.item
+                            call_id = getattr(output_item.raw_item, "call_id", "")
+                            yield ToolCallResultResponse(
+                                tool_call_id=call_id,
+                                content=str(output_item.output),
                             )
-                        elif name == "display_landing_page":
-                            yield MetadataResponse(
-                                metadata={"type": "navigation", "page": "landing"}
-                            )
-                        elif name == "display_education_page":
-                            yield MetadataResponse(
-                                metadata={"type": "navigation", "page": "education"}
-                            )
-                        elif name == "display_resume_page":
-                            yield MetadataResponse(
-                                metadata={"type": "navigation", "page": "resume"}
-                            )
-                        elif name == "display_guestbook_page":
-                            yield MetadataResponse(
-                                metadata={"type": "navigation", "page": "guestbook"}
-                            )
-                        elif name == "display_project":
-                            # Parse the arguments to get the project ID
-                            try:
-                                args_dict = json.loads(args) if args else {}
-                                project_id = args_dict.get("id", "")
-                                yield MetadataResponse(
-                                    metadata={
-                                        "type": "navigation",
-                                        "page": "project",
-                                        "project_id": project_id,
-                                    }
-                                )
-                            except:
-                                yield MetadataResponse(
-                                    metadata={"type": "navigation", "page": "project"}
-                                )
-                        elif name == "search_projects":
-                            # For search_projects, we might want to send the results as metadata
-                            # but since the function returns text, we'll let it be handled normally
-                            pass
-
-                    elif event.name == "tool_output":
-                        output_item = event.item
-                        call_id = getattr(output_item.raw_item, "call_id", "")
-                        yield ToolCallResultResponse(
-                            tool_call_id=call_id,
-                            content=str(output_item.output),
-                        )
 
         except Exception as e:
             # Check if it's a guardrail tripwire trigger
@@ -614,72 +621,77 @@ class LlmClient:
                 processed_messages.append(msg)
 
         try:
-            result = Runner.run_streamed(self.agent, processed_messages)
+            with trace(
+                workflow_name="portfolio_text_response",
+                group_id=self.call_id,
+                metadata={"mode": self.mode, "message_count": str(len(processed_messages))},
+            ):
+                result = Runner.run_streamed(self.agent, processed_messages)
 
-            async for event in result.stream_events():
-                if isinstance(event, RawResponsesStreamEvent):
-                    data = event.data
-                    if getattr(data, "type", "") == "response.output_text.delta":
-                        delta_content = getattr(data, "delta", "")
-                        if delta_content:
-                            yield TextChatStreamChunk(
-                                type="content",
-                                content=delta_content,
-                            )
+                async for event in result.stream_events():
+                    if isinstance(event, RawResponsesStreamEvent):
+                        data = event.data
+                        if getattr(data, "type", "") == "response.output_text.delta":
+                            delta_content = getattr(data, "delta", "")
+                            if delta_content:
+                                yield TextChatStreamChunk(
+                                    type="content",
+                                    content=delta_content,
+                                )
 
-                elif isinstance(event, RunItemStreamEvent):
-                    if event.name == "tool_called":
-                        tool_call = event.item.raw_item
-                        name = getattr(tool_call, "name", "")
-                        args = getattr(tool_call, "arguments", "") or ""
+                    elif isinstance(event, RunItemStreamEvent):
+                        if event.name == "tool_called":
+                            tool_call = event.item.raw_item
+                            name = getattr(tool_call, "name", "")
+                            args = getattr(tool_call, "arguments", "") or ""
 
-                        # Text mode: Don't inject tool message as content
-                        # The LLM will generate natural transition phrases
-                        # (Voice mode keeps message injection to mask latency)
+                            # Text mode: Don't inject tool message as content
+                            # The LLM will generate natural transition phrases
+                            # (Voice mode keeps message injection to mask latency)
 
-                        # Send navigation metadata
-                        if name == "display_homepage":
-                            yield TextChatStreamChunk(
-                                type="metadata",
-                                metadata={"type": "navigation", "page": "personal"}
-                            )
-                        elif name == "display_landing_page":
-                            yield TextChatStreamChunk(
-                                type="metadata",
-                                metadata={"type": "navigation", "page": "landing"}
-                            )
-                        elif name == "display_education_page":
-                            yield TextChatStreamChunk(
-                                type="metadata",
-                                metadata={"type": "navigation", "page": "education"}
-                            )
-                        elif name == "display_resume_page":
-                            yield TextChatStreamChunk(
-                                type="metadata",
-                                metadata={"type": "navigation", "page": "resume"}
-                            )
-                        elif name == "display_guestbook_page":
-                            yield TextChatStreamChunk(
-                                type="metadata",
-                                metadata={"type": "navigation", "page": "guestbook"}
-                            )
-                        elif name == "display_project":
-                            try:
-                                args_dict = json.loads(args) if args else {}
-                                project_id = args_dict.get("id", "")
+                            # Send navigation metadata
+                            if name == "display_homepage":
                                 yield TextChatStreamChunk(
                                     type="metadata",
-                                    metadata={
-                                        "type": "navigation",
-                                        "page": "project",
-                                        "project_id": project_id,
-                                    }
+                                    metadata={"type": "navigation", "page": "personal"}
                                 )
-                            except:
+                            elif name == "display_landing_page":
                                 yield TextChatStreamChunk(
                                     type="metadata",
-                                    metadata={"type": "navigation", "page": "project"}
+                                    metadata={"type": "navigation", "page": "landing"}
                                 )
+                            elif name == "display_education_page":
+                                yield TextChatStreamChunk(
+                                    type="metadata",
+                                    metadata={"type": "navigation", "page": "education"}
+                                )
+                            elif name == "display_resume_page":
+                                yield TextChatStreamChunk(
+                                    type="metadata",
+                                    metadata={"type": "navigation", "page": "resume"}
+                                )
+                            elif name == "display_guestbook_page":
+                                yield TextChatStreamChunk(
+                                    type="metadata",
+                                    metadata={"type": "navigation", "page": "guestbook"}
+                                )
+                            elif name == "display_project":
+                                try:
+                                    args_dict = json.loads(args) if args else {}
+                                    project_id = args_dict.get("id", "")
+                                    yield TextChatStreamChunk(
+                                        type="metadata",
+                                        metadata={
+                                            "type": "navigation",
+                                            "page": "project",
+                                            "project_id": project_id,
+                                        }
+                                    )
+                                except:
+                                    yield TextChatStreamChunk(
+                                        type="metadata",
+                                        metadata={"type": "navigation", "page": "project"}
+                                    )
 
         except Exception as e:
             # Check if it's a guardrail tripwire trigger
@@ -744,7 +756,11 @@ async def generate_summary(transcript: List[TextChatMessage]) -> str:
 
     try:
         # Run the agent to get a single response
-        result = await Runner.run(summary_agent, messages)
+        with trace(
+            workflow_name="portfolio_summary_generation",
+            metadata={"message_count": str(len(messages))},
+        ):
+            result = await Runner.run(summary_agent, messages)
         return result.final_output
     except Exception as e:
         print(f"Error generating summary: {e}")
