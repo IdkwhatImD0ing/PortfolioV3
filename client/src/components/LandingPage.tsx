@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { motion, useReducedMotion } from "motion/react"
 import Image from "next/image"
-import { Mic, MousePointer, Keyboard, ArrowLeft, ArrowDown, FileText, BookOpen } from "lucide-react"
+import { Mic, MousePointer, Keyboard, ArrowLeft, ArrowDown, FileText } from "lucide-react"
 
 interface LandingPageProps {
   onNavigate?: (page: string) => void
@@ -170,13 +170,6 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
           >
             <p className="text-sm text-muted-foreground">Quick Reference</p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={() => onNavigate?.("guestbook")}
-                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200 cursor-pointer"
-              >
-                <BookOpen className="w-4 h-4 text-primary/70 group-hover:text-primary transition-colors" />
-                <span>Guestbook</span>
-              </button>
               <button
                 onClick={() => onNavigate?.("resume")}
                 className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200 cursor-pointer"

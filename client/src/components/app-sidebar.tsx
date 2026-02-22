@@ -41,6 +41,10 @@ interface VoiceChatSidebarProps {
   // Text chat props
   sendTextMessage: (content: string) => void
   isTextLoading: boolean
+
+  // Navigation
+  activePage?: string
+  onNavigateHome?: () => void
 }
 
 const VoiceChatSidebarComponent = ({
@@ -53,6 +57,8 @@ const VoiceChatSidebarComponent = ({
   setChatMode,
   sendTextMessage,
   isTextLoading,
+  activePage,
+  onNavigateHome,
 }: VoiceChatSidebarProps) => {
   const [isPaused, setIsPaused] = useState(false)
   const [waveformValues, setWaveformValues] = useState<number[]>(() => Array(10).fill(2))
@@ -217,7 +223,14 @@ const VoiceChatSidebarComponent = ({
             alt="Bill Zhang"
             width={120}
             height={120}
-            className="rounded-full border-2 border-primary z-10 relative"
+            onClick={activePage !== "landing" && onNavigateHome ? onNavigateHome : undefined}
+            className={`rounded-full border-2 border-primary z-10 relative ${
+              activePage !== "landing" && onNavigateHome ? "cursor-pointer hover:opacity-80 transition-opacity" : ""
+            }`}
+            role={activePage !== "landing" && onNavigateHome ? "button" : undefined}
+            tabIndex={activePage !== "landing" && onNavigateHome ? 0 : undefined}
+            onKeyDown={activePage !== "landing" && onNavigateHome ? (e) => { if (e.key === "Enter" || e.key === " ") onNavigateHome() } : undefined}
+            aria-label={activePage !== "landing" ? "Go to home page" : undefined}
           />
 
           {/* Voice Activity Indicator */}

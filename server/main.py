@@ -16,8 +16,6 @@ from custom_types import (
     SummaryRequest,
 )
 from typing import Optional, List
-from pydantic import BaseModel
-import time
 from socket_manager import manager
 from llm import LlmClient, generate_summary
 
@@ -84,66 +82,6 @@ retell = Retell(api_key=os.getenv("RETELL_API_KEY"))
 @app.get("/ping")
 async def ping():
     return {"message": "pong"}
-
-
-class GuestbookEntry(BaseModel):
-    name: str
-    message: str
-    timestamp: float = 0.0
-
-
-GUESTBOOK_FILE = "guestbook.json"
-
-
-@app.get("/guestbook")
-async def get_guestbook():
-    """Get all guestbook entries."""
-    if not os.path.exists(GUESTBOOK_FILE):
-        return []
-    try:
-        with open(GUESTBOOK_FILE, "r") as f:
-            data = json.load(f)
-            # Ensure data is a list
-            if not isinstance(data, list):
-                return []
-            return data
-    except Exception as e:
-        print(f"Error reading guestbook: {e}")
-        return []
-
-
-@app.post("/guestbook")
-async def add_guestbook_entry(entry: GuestbookEntry):
-    """Add a new guestbook entry."""
-    entries = []
-    if os.path.exists(GUESTBOOK_FILE):
-        try:
-            with open(GUESTBOOK_FILE, "r") as f:
-                content = f.read()
-                if content:
-                    entries = json.loads(content)
-                    if not isinstance(entries, list):
-                        entries = []
-        except Exception as e:
-            print(f"Error reading guestbook for append: {e}")
-            entries = []
-
-    # Add timestamp
-    entry.timestamp = time.time()
-
-    entries.append(entry.model_dump())
-
-    # Keep only last 100 entries
-    if len(entries) > 100:
-        entries = entries[-100:]
-
-    try:
-        with open(GUESTBOOK_FILE, "w") as f:
-            json.dump(entries, f, indent=2)
-        return {"success": True, "entry": entry.model_dump()}
-    except Exception as e:
-        print(f"Error saving guestbook entry: {e}")
-        return JSONResponse(status_code=500, content={"message": str(e)})
 
 
 @app.post("/chat")

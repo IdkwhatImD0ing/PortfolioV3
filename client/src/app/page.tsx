@@ -4,7 +4,6 @@ import EducationPage from "@/components/education";
 import PersonalPage from "@/components/personal";
 import ProjectPage from "@/components/project";
 import ResumePage from "@/components/resume";
-import GuestbookPage from "@/components/GuestbookPage";
 import LandingPage from "@/components/LandingPage";
 import FallbackLink from "@/components/fallback-link";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
@@ -23,7 +22,7 @@ interface RegisterCallResponse {
 
 interface NavigationMeta {
   type: string;
-  page?: "landing" | "education" | "project" | "personal" | "resume" | "guestbook";
+  page?: "landing" | "education" | "project" | "personal" | "resume";
   project_id?: string;
 }
 
@@ -37,11 +36,11 @@ function HomeContent() {
   const router = useRouter();
   
   // Read initial state from URL
-  const initialPage = (searchParams.get('page') as "landing" | "education" | "project" | "personal" | "resume" | "guestbook") || "landing";
+  const initialPage = (searchParams.get('page') as "landing" | "education" | "project" | "personal" | "resume") || "landing";
   const initialProjectId = searchParams.get('projectId') || undefined;
 
   const [isCalling, setIsCalling] = useState(false);
-  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal" | "resume" | "guestbook">(initialPage);
+  const [activePage, setActivePage] = useState<"landing" | "education" | "project" | "personal" | "resume">(initialPage);
   const [fullTranscript, setFullTranscript] = useState<TranscriptEntry[]>([]);
   const [isAgentTalking, setIsAgentTalking] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(initialProjectId);
@@ -71,7 +70,6 @@ function HomeContent() {
       education: "Education | Bill Zhang",
       project: "Projects | Bill Zhang",
       resume: "Resume | Bill Zhang",
-      guestbook: "Guestbook | Bill Zhang",
     };
     document.title = pageTitles[activePage] || "Bill Zhang | AI Engineer Portfolio";
   }, [activePage]);
@@ -205,9 +203,6 @@ function HomeContent() {
             break;
           case "resume":
             setActivePage("resume");
-            break;
-          case "guestbook":
-            setActivePage("guestbook");
             break;
           default:
             console.log(`Unknown page: ${page}`);
@@ -489,6 +484,8 @@ function HomeContent() {
             setChatMode={setChatMode}
             sendTextMessage={sendTextMessage}
             isTextLoading={isTextLoading}
+            activePage={activePage}
+            onNavigateHome={() => setActivePage("landing")}
           />
         </ErrorBoundary>
         <main id="main-content" className={`flex flex-1 min-h-screen ${activePage === "resume" ? "items-stretch" : "items-center justify-center"}`}>
@@ -512,7 +509,6 @@ function HomeContent() {
             {activePage === "education" && <EducationPage />}
             {activePage === "project" && <ProjectPage projectId={currentProjectId} />}
             {activePage === "resume" && <ResumePage />}
-            {activePage === "guestbook" && <GuestbookPage />}
           </ErrorBoundary>
         </main>
       </div>
