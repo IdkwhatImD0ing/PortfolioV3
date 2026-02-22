@@ -1,3 +1,4 @@
 *.env
 *__pycache__/
 *gcloud.json
+server/guestbook.json
