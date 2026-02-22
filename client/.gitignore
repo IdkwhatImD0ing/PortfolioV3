@@ -48,3 +48,4 @@ public/resume.out
 public/resume.fls
 public/resume.fdb_latexmk
 public/resume.synctex.gz
+.env*.local
