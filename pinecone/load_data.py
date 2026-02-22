@@ -22,8 +22,7 @@ EMBEDDING_DIMENSIONS = 3072
 
 async def get_embedding(text: str) -> List[float]:
     """Generate embedding for text using OpenAI's text-embedding-3-large model."""
-    response = await openai_client.embeddings.create(model=EMBEDDING_MODEL, input=text)
-    return response.data[0].embedding
+    return (await get_embeddings([text]))[0]
 
 
 async def get_embeddings(texts: List[str]) -> List[List[float]]:
@@ -40,13 +39,13 @@ async def prepare_vectors(data: List[Dict]) -> List[tuple]:
     texts_to_embed = []
     for item in data:
         text_content = f"""
-        Project: {item['name']}
+        Project: {item["name"]}
 
         Summary:
-        {item['summary']}
+        {item["summary"]}
 
         Details:
-        {item['details']}
+        {item["details"]}
         """
         texts_to_embed.append(text_content)
 

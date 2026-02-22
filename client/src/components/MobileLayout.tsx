@@ -11,6 +11,7 @@ import EducationPage from "@/components/education"
 import PersonalPage from "@/components/personal"
 import ProjectPage from "@/components/project"
 import ResumePage from "@/components/resume"
+import GuestbookPage from "@/components/GuestbookPage"
 import LandingPage from "@/components/LandingPage"
 import FallbackLink from "@/components/fallback-link"
 import ErrorBoundary from "@/components/ErrorBoundary"
@@ -22,8 +23,8 @@ interface TranscriptEntry {
 }
 
 interface MobileLayoutProps {
-  activePage: "landing" | "education" | "project" | "personal" | "resume"
-  setActivePage: (page: "landing" | "education" | "project" | "personal" | "resume") => void
+  activePage: "landing" | "education" | "project" | "personal" | "resume" | "guestbook"
+  setActivePage: (page: "landing" | "education" | "project" | "personal" | "resume" | "guestbook") => void
   currentProjectId?: string
   isCalling: boolean
   startCall: () => void
@@ -42,6 +43,7 @@ const PAGE_LABELS: Record<string, string> = {
   education: "Education",
   project: "Projects",
   resume: "Resume",
+  guestbook: "Guestbook",
 }
 
 function MobileLayoutComponent({
@@ -170,6 +172,7 @@ function MobileLayoutComponent({
               {activePage === "education" && <EducationPage />}
               {activePage === "project" && <ProjectPage projectId={currentProjectId} />}
               {activePage === "resume" && <ResumePage />}
+              {activePage === "guestbook" && <GuestbookPage />}
             </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
