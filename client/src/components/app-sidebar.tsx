@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, memo } from "react"
 import Image from "next/image"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform, MessageSquare, Send, Loader2, FileText, Copy, Check } from "lucide-react"
+import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform, MessageSquare, Send, Loader2, Copy, Check, RefreshCw, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
@@ -153,7 +153,12 @@ const VoiceChatSidebarComponent = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ transcript }),
+        body: JSON.stringify({
+          transcript: transcript.map(entry => ({
+            role: entry.role === "agent" ? "assistant" : entry.role,
+            content: entry.content,
+          })),
+        }),
       })
 
       if (!response.ok) throw new Error('Failed to generate summary')
@@ -271,61 +276,76 @@ const VoiceChatSidebarComponent = ({
           />
         </div>
 
-        {/* Recruiter Cheat Sheet Button */}
-        <Dialog open={isSummaryOpen} onOpenChange={setIsSummaryOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4 w-full gap-2 text-xs border-primary/20 hover:border-primary/50"
+        {/* Recruiter Cheat Sheet — only visible after conversation starts */}
+        <AnimatePresence>
+          {transcript.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             >
-              <FileText className="h-3 w-3" />
-              Recruiter Cheat Sheet
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col bg-card border-border">
-            <DialogHeader>
-              <DialogTitle>Recruiter Cheat Sheet</DialogTitle>
-              <DialogDescription>
-                AI-generated summary of our conversation for your notes.
-              </DialogDescription>
-            </DialogHeader>
+              <Dialog open={isSummaryOpen} onOpenChange={setIsSummaryOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 text-xs border-primary/30 hover:border-primary/60 hover:bg-primary/5"
+                  >
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    Summarize for Recruiters
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col bg-card border-border">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Recruiter Cheat Sheet
+                    </DialogTitle>
+                    <DialogDescription>
+                      A quick, copy-paste-ready summary of this conversation — key skills, projects discussed, and why Bill is worth interviewing.
+                    </DialogDescription>
+                  </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto p-4 bg-muted/30 rounded-md border border-border mt-2">
-              {summaryLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Generating summary...</p>
-                </div>
-              ) : (
-                <div className="prose prose-invert prose-sm max-w-none prose-headings:text-primary prose-a:text-blue-400">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {summaryContent}
-                  </ReactMarkdown>
-                </div>
-              )}
-            </div>
+                  <div className="flex-1 overflow-y-auto p-4 bg-muted/30 rounded-md border border-border mt-2">
+                    {summaryLoading ? (
+                      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">Analyzing conversation...</p>
+                      </div>
+                    ) : (
+                      <div className="prose prose-invert prose-sm max-w-none prose-headings:text-primary prose-a:text-blue-400">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {summaryContent}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
 
-            <div className="flex justify-end pt-4 gap-2">
-               <Button
-                variant="outline"
-                onClick={() => handleGenerateSummary()}
-                disabled={summaryLoading}
-                className="gap-2"
-              >
-                Regenerate
-              </Button>
-              <Button
-                onClick={handleCopySummary}
-                disabled={summaryLoading || !summaryContent}
-                className="gap-2"
-              >
-                {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {isCopied ? "Copied" : "Copy to Clipboard"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+                  <div className="flex justify-end pt-4 gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleGenerateSummary()}
+                      disabled={summaryLoading}
+                      className="gap-2"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${summaryLoading ? "animate-spin" : ""}`} />
+                      Regenerate
+                    </Button>
+                    <Button
+                      onClick={handleCopySummary}
+                      disabled={summaryLoading || !summaryContent}
+                      className="gap-2"
+                    >
+                      {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {isCopied ? "Copied" : "Copy to Clipboard"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Voice Activity Visualization - only show in voice mode */}
