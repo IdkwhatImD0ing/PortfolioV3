@@ -1,8 +1,8 @@
 # React Best Practices
 
-**Version 1.0.0**  
+**Version 1.1.0**  
 Vercel Engineering  
-January 2026
+February 2026
 
 > **Note:**  
 > This document is mainly for agents and LLMs to follow when maintaining,  
@@ -14,7 +14,7 @@ January 2026
 
 ## Abstract
 
-Comprehensive performance optimization guide for React and Next.js applications, designed for AI agents and LLMs. Contains 40+ rules across 8 categories, prioritized by impact from critical (eliminating waterfalls, reducing bundle size) to incremental (advanced patterns). Each rule includes detailed explanations, real-world examples comparing incorrect vs. correct implementations, and specific impact metrics to guide automated refactoring and code generation.
+Comprehensive performance optimization guide for React 19 and Next.js 15 applications, designed for AI agents and LLMs. Contains 50+ rules across 10 categories, prioritized by impact from critical (eliminating waterfalls, reducing bundle size) to incremental (advanced patterns). Includes React 19 patterns (use hook, form actions, useOptimistic, ref-as-prop) and Next.js 15 patterns (async request APIs, caching defaults). Each rule includes detailed explanations, real-world examples comparing incorrect vs. correct implementations, and specific impact metrics to guide automated refactoring and code generation.
 
 ---
 
@@ -85,6 +85,15 @@ Comprehensive performance optimization guide for React and Next.js applications,
    - 8.1 [Initialize App Once, Not Per Mount](#81-initialize-app-once-not-per-mount)
    - 8.2 [Store Event Handlers in Refs](#82-store-event-handlers-in-refs)
    - 8.3 [useEffectEvent for Stable Callback Refs](#83-useeffectevent-for-stable-callback-refs)
+9. [React 19 Patterns](#9-react-19-patterns) — **HIGH**
+   - 9.1 [Use the use() Hook for Promises and Context](#91-use-the-use-hook-for-promises-and-context)
+   - 9.2 [Use useActionState for Form Handling](#92-use-useactionstate-for-form-handling)
+   - 9.3 [Use useOptimistic for Instant Feedback](#93-use-useoptimistic-for-instant-feedback)
+   - 9.4 [Pass ref as a Prop Instead of forwardRef](#94-pass-ref-as-a-prop-instead-of-forwardref)
+   - 9.5 [Use Ref Cleanup Functions](#95-use-ref-cleanup-functions)
+10. [Next.js 15 Patterns](#10-nextjs-15-patterns) — **HIGH**
+    - 10.1 [Await Async Request APIs](#101-await-async-request-apis)
+    - 10.2 [Understand New Caching Defaults](#102-understand-new-caching-defaults)
 
 ---
 
@@ -2923,6 +2932,571 @@ function SearchInput({ onSearch }: { onSearch: (q: string) => void }) {
 
 ---
 
+## 9. React 19 Patterns
+
+**Impact: HIGH**
+
+React 19 introduces new APIs that simplify common patterns, reduce boilerplate, and improve performance.
+
+### 9.1 Use the use() Hook for Promises and Context
+
+**Impact: HIGH (simplifies async data consumption in components)**
+
+The `use()` hook reads the value of a Promise or Context. Unlike other hooks, `use()` can be called inside loops and conditionals. When used with Promises, it integrates with Suspense and Error Boundaries.
+
+**Incorrect: useEffect + useState for async data**
+
+```tsx
+function UserProfile({ userPromise }: { userPromise: Promise<User> }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    userPromise.then(setUser).catch(setError)
+  }, [userPromise])
+
+  if (error) return <ErrorDisplay error={error} />
+  if (!user) return <Skeleton />
+  return <div>{user.name}</div>
+}
+```
+
+**Correct: use() with Suspense**
+
+```tsx
+import { use } from 'react'
+
+function UserProfile({ userPromise }: { userPromise: Promise<User> }) {
+  const user = use(userPromise)
+  return <div>{user.name}</div>
+}
+
+// Parent provides Suspense + ErrorBoundary
+function Page() {
+  const userPromise = fetchUser()
+  return (
+    <ErrorBoundary fallback={<ErrorDisplay />}>
+      <Suspense fallback={<Skeleton />}>
+        <UserProfile userPromise={userPromise} />
+      </Suspense>
+    </ErrorBoundary>
+  )
+}
+```
+
+**Conditional context reading:**
+
+```tsx
+function StatusIndicator({ isAdmin }: { isAdmin: boolean }) {
+  // use() can be called conditionally, unlike useContext
+  if (isAdmin) {
+    const adminData = use(AdminContext)
+    return <AdminBadge data={adminData} />
+  }
+  return <UserBadge />
+}
+```
+
+**Important:** Only pass Promises created outside of the component (e.g., from a Server Component, data loader, or parent). Promises created during render cause the component to re-suspend on every render.
+
+Reference: [https://react.dev/reference/react/use](https://react.dev/reference/react/use)
+
+### 9.2 Use useActionState for Form Handling
+
+**Impact: HIGH (eliminates manual form state management)**
+
+`useActionState` manages form state including pending status, error handling, and progressive enhancement. Works with both Server Actions and client-side form handlers.
+
+**Incorrect: manual form state management**
+
+```tsx
+function LoginForm() {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, setIsPending] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsPending(true)
+    setError(null)
+    try {
+      await login(email)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input value={email} onChange={e => setEmail(e.target.value)} />
+      {error && <p className="text-red-500">{error}</p>}
+      <button disabled={isPending}>
+        {isPending ? 'Logging in...' : 'Log in'}
+      </button>
+    </form>
+  )
+}
+```
+
+**Correct: useActionState with Server Action**
+
+```tsx
+'use client'
+import { useActionState } from 'react'
+import { login } from './actions'
+
+function LoginForm() {
+  const [state, formAction, isPending] = useActionState(login, {
+    error: null
+  })
+
+  return (
+    <form action={formAction}>
+      <input name="email" type="email" required />
+      {state.error && <p className="text-red-500">{state.error}</p>}
+      <button disabled={isPending}>
+        {isPending ? 'Logging in...' : 'Log in'}
+      </button>
+    </form>
+  )
+}
+```
+
+```typescript
+// actions.ts
+'use server'
+
+export async function login(prevState: { error: string | null }, formData: FormData) {
+  const email = formData.get('email') as string
+  
+  try {
+    await authenticateUser(email)
+    redirect('/dashboard')
+  } catch {
+    return { error: 'Invalid credentials' }
+  }
+}
+```
+
+**Benefits:**
+
+- Progressive enhancement: forms work before JavaScript loads
+- Automatic pending state management
+- Built-in error handling through return values
+- Works with Server Actions for zero-client-JS mutations
+
+**Use `useFormStatus` for submit button state:**
+
+```tsx
+import { useFormStatus } from 'react-dom'
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button disabled={pending}>
+      {pending ? 'Submitting...' : 'Submit'}
+    </button>
+  )
+}
+```
+
+Reference: [https://react.dev/reference/react/useActionState](https://react.dev/reference/react/useActionState)
+
+### 9.3 Use useOptimistic for Instant Feedback
+
+**Impact: MEDIUM-HIGH (eliminates perceived latency for mutations)**
+
+`useOptimistic` shows an optimistic state while an async action is pending, then reverts if the action fails. Eliminates the delay between user action and UI feedback.
+
+**Incorrect: wait for server response**
+
+```tsx
+function LikeButton({ postId, liked, likeCount }: Props) {
+  const [isLiked, setIsLiked] = useState(liked)
+  const [count, setCount] = useState(likeCount)
+  const [isPending, setIsPending] = useState(false)
+
+  const handleLike = async () => {
+    setIsPending(true)
+    try {
+      const result = await toggleLike(postId)
+      setIsLiked(result.liked)
+      setCount(result.count)
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  return (
+    <button onClick={handleLike} disabled={isPending}>
+      {isLiked ? '❤️' : '🤍'} {count}
+    </button>
+  )
+}
+```
+
+**Correct: instant optimistic update**
+
+```tsx
+import { useOptimistic } from 'react'
+
+function LikeButton({ postId, liked, likeCount }: Props) {
+  const [optimistic, setOptimistic] = useOptimistic(
+    { liked, count: likeCount },
+    (current, newLiked: boolean) => ({
+      liked: newLiked,
+      count: current.count + (newLiked ? 1 : -1)
+    })
+  )
+
+  async function handleLike() {
+    const newLiked = !optimistic.liked
+    setOptimistic(newLiked) // Instant UI update
+    await toggleLike(postId) // Server catches up
+    // On success: React replaces optimistic with real state
+    // On failure: React reverts to previous state
+  }
+
+  return (
+    <button onClick={handleLike}>
+      {optimistic.liked ? '❤️' : '🤍'} {optimistic.count}
+    </button>
+  )
+}
+```
+
+**With form actions:**
+
+```tsx
+function TodoList({ todos }: { todos: Todo[] }) {
+  const [optimisticTodos, addOptimisticTodo] = useOptimistic(
+    todos,
+    (state, newTodo: Todo) => [...state, newTodo]
+  )
+
+  return (
+    <form action={async (formData: FormData) => {
+      const text = formData.get('text') as string
+      addOptimisticTodo({ id: crypto.randomUUID(), text, pending: true })
+      await createTodo(text)
+    }}>
+      <input name="text" />
+      <button type="submit">Add</button>
+      <ul>
+        {optimisticTodos.map(todo => (
+          <li key={todo.id} style={{ opacity: todo.pending ? 0.5 : 1 }}>
+            {todo.text}
+          </li>
+        ))}
+      </ul>
+    </form>
+  )
+}
+```
+
+Reference: [https://react.dev/reference/react/useOptimistic](https://react.dev/reference/react/useOptimistic)
+
+### 9.4 Pass ref as a Prop Instead of forwardRef
+
+**Impact: MEDIUM (reduces boilerplate and improves readability)**
+
+In React 19, `ref` is available as a regular prop for function components. `forwardRef` is no longer needed and is deprecated.
+
+**Incorrect: using forwardRef (deprecated in React 19)**
+
+```tsx
+import { forwardRef } from 'react'
+
+const Input = forwardRef<HTMLInputElement, InputProps>(
+  function Input({ label, ...props }, ref) {
+    return (
+      <label>
+        {label}
+        <input ref={ref} {...props} />
+      </label>
+    )
+  }
+)
+```
+
+**Correct: ref as a regular prop**
+
+```tsx
+function Input({ label, ref, ...props }: InputProps & { ref?: React.Ref<HTMLInputElement> }) {
+  return (
+    <label>
+      {label}
+      <input ref={ref} {...props} />
+    </label>
+  )
+}
+```
+
+**Benefits:**
+
+- Simpler component signatures
+- No wrapper function needed
+- Better TypeScript inference
+- Works with all component patterns (memo, lazy, etc.)
+
+**Migration:** `forwardRef` still works in React 19 but is deprecated. It will be removed in a future major version. Use the React 19 codemod to automatically migrate:
+
+```bash
+npx codemod@latest react/19/replace-reactdom-render
+```
+
+Reference: [https://react.dev/blog/2024/12/05/react-19#ref-as-a-prop](https://react.dev/blog/2024/12/05/react-19#ref-as-a-prop)
+
+### 9.5 Use Ref Cleanup Functions
+
+**Impact: MEDIUM (prevents memory leaks and stale refs)**
+
+In React 19, ref callbacks can return a cleanup function, similar to `useEffect`. This runs when the element is removed from the DOM.
+
+**Incorrect: manual cleanup with useEffect**
+
+```tsx
+function VideoPlayer({ src }: { src: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          videoRef.current?.play()
+        } else {
+          videoRef.current?.pause()
+        }
+      })
+    })
+
+    if (videoRef.current) {
+      observer.observe(videoRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
+  return <video ref={videoRef} src={src} />
+}
+```
+
+**Correct: cleanup in ref callback**
+
+```tsx
+function VideoPlayer({ src }: { src: string }) {
+  return (
+    <video
+      ref={(node) => {
+        if (!node) return
+
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              node.play()
+            } else {
+              node.pause()
+            }
+          })
+        })
+
+        observer.observe(node)
+
+        // Cleanup function — runs when element is removed
+        return () => observer.disconnect()
+      }}
+      src={src}
+    />
+  )
+}
+```
+
+**Benefits:**
+
+- Co-locates setup and cleanup with the DOM element
+- No need for a separate `useRef` + `useEffect`
+- Cleanup is guaranteed to run when the element unmounts
+- Simpler mental model: each ref callback manages its own lifecycle
+
+**When to use:**
+
+- Setting up observers (IntersectionObserver, ResizeObserver, MutationObserver)
+- Adding event listeners directly to DOM elements
+- Initializing third-party libraries on DOM nodes
+- Any setup that requires corresponding teardown
+
+Reference: [https://react.dev/blog/2024/12/05/react-19#ref-cleanup-functions](https://react.dev/blog/2024/12/05/react-19#ref-cleanup-functions)
+
+---
+
+## 10. Next.js 15 Patterns
+
+**Impact: HIGH**
+
+Next.js 15 introduces breaking changes to caching defaults and makes request APIs asynchronous. Updating to these patterns is critical for correctness.
+
+### 10.1 Await Async Request APIs
+
+**Impact: CRITICAL (breaking change in Next.js 15)**
+
+In Next.js 15, `cookies()`, `headers()`, `params`, and `searchParams` are now asynchronous. Code that accesses these synchronously will break.
+
+**Incorrect: synchronous access (Next.js 14 pattern)**
+
+```tsx
+import { cookies, headers } from 'next/headers'
+
+export default function Page({ params, searchParams }: PageProps) {
+  // ❌ These are now async in Next.js 15
+  const { slug } = params
+  const { q } = searchParams
+  const cookieStore = cookies()
+  const headersList = headers()
+  const theme = cookieStore.get('theme')
+  const host = headersList.get('host')
+
+  return <div>{slug} - {q} - {theme?.value} - {host}</div>
+}
+```
+
+**Correct: await async APIs**
+
+```tsx
+import { cookies, headers } from 'next/headers'
+
+interface PageProps {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ q?: string }>
+}
+
+export default async function Page({ params, searchParams }: PageProps) {
+  const { slug } = await params
+  const { q } = await searchParams
+  const cookieStore = await cookies()
+  const headersList = await headers()
+  const theme = cookieStore.get('theme')
+  const host = headersList.get('host')
+
+  return <div>{slug} - {q} - {theme?.value} - {host}</div>
+}
+```
+
+**In client components (searchParams only):**
+
+```tsx
+'use client'
+import { use } from 'react'
+
+export default function ClientPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = use(searchParams)
+  return <div>Query: {q}</div>
+}
+```
+
+**In middleware:**
+
+```typescript
+import { type NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  // request.cookies and request.headers are still synchronous in middleware
+  const token = request.cookies.get('token')
+  const host = request.headers.get('host')
+}
+```
+
+**Migration:** Use the Next.js codemod to automatically update:
+
+```bash
+npx @next/codemod@canary next-async-request-api .
+```
+
+Reference: [https://nextjs.org/docs/app/building-your-application/upgrading/version-15](https://nextjs.org/docs/app/building-your-application/upgrading/version-15)
+
+### 10.2 Understand New Caching Defaults
+
+**Impact: HIGH (behavior change affects data freshness)**
+
+In Next.js 15, caching defaults changed significantly. `fetch` requests, GET Route Handlers, and client router cache are **no longer cached by default**. This means apps upgraded to Next.js 15 may see more frequent data fetching unless explicit caching is configured.
+
+**Next.js 14 defaults (old):**
+
+```typescript
+// Cached by default — needed force-dynamic to opt out
+fetch('https://api.example.com/data')
+
+// GET Route Handlers — cached by default
+export async function GET() {
+  return Response.json({ data: 'cached by default' })
+}
+```
+
+**Next.js 15 defaults (new):**
+
+```typescript
+// NOT cached by default — opt in with cache option
+fetch('https://api.example.com/data') // Fresh every request
+
+// Explicitly cache
+fetch('https://api.example.com/data', { cache: 'force-cache' })
+
+// Or use next.revalidate
+fetch('https://api.example.com/data', { next: { revalidate: 3600 } })
+```
+
+**Route Handlers — opt in to caching:**
+
+```typescript
+// NOT cached by default in Next.js 15
+export async function GET() {
+  return Response.json({ data: 'fresh every request' })
+}
+
+// Opt in to static caching
+export const dynamic = 'force-static'
+export async function GET() {
+  return Response.json({ data: 'cached at build time' })
+}
+```
+
+**Client router cache:**
+
+```typescript
+// Page segments are no longer cached by default in client-side navigation
+// Previously: cached for 30s (dynamic) or 5min (static)
+// Now: staleTime defaults to 0 for dynamic pages
+
+// Opt in via next.config.ts
+const nextConfig = {
+  experimental: {
+    staleTimes: {
+      dynamic: 30, // Restore previous 30s cache for dynamic pages
+      static: 180, // Cache static pages for 3 minutes
+    },
+  },
+}
+```
+
+**When to explicitly cache:**
+
+- API responses that rarely change (config, feature flags)
+- Expensive database queries (use `unstable_cache` or `React.cache`)
+- Static content (blog posts, documentation)
+- Third-party API calls with rate limits
+
+**When the new defaults are better:**
+
+- User-specific data (profiles, dashboards)
+- Real-time data (notifications, live feeds)
+- Frequently changing data (prices, inventory)
+- Data that must always be fresh
+
+Reference: [https://nextjs.org/blog/next-15#caching-updates](https://nextjs.org/blog/next-15#caching-updates)
+
+---
+
 ## References
 
 1. [https://react.dev](https://react.dev)
@@ -2932,3 +3506,5 @@ function SearchInput({ onSearch }: { onSearch: (q: string) => void }) {
 5. [https://github.com/isaacs/node-lru-cache](https://github.com/isaacs/node-lru-cache)
 6. [https://vercel.com/blog/how-we-optimized-package-imports-in-next-js](https://vercel.com/blog/how-we-optimized-package-imports-in-next-js)
 7. [https://vercel.com/blog/how-we-made-the-vercel-dashboard-twice-as-fast](https://vercel.com/blog/how-we-made-the-vercel-dashboard-twice-as-fast)
+8. [https://react.dev/blog/2024/12/05/react-19](https://react.dev/blog/2024/12/05/react-19)
+9. [https://nextjs.org/blog/next-15](https://nextjs.org/blog/next-15)

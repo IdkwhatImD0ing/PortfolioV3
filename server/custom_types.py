@@ -108,7 +108,7 @@ class TextChatRequest(BaseModel):
 
 
 class TextChatStreamChunk(BaseModel):
-    type: Literal["content", "metadata", "done", "error"]
+    type: Literal["content", "metadata", "done", "error", "status"]
     content: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
 

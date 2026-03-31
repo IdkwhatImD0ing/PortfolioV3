@@ -112,7 +112,8 @@ def search_projects(query: str, top_k: int = 3) -> List[Dict]:
 
 ### get_project_by_id()
 
-Fetch a specific project.
+Fetch a specific project by its exact ID. The LLM should always use
+`search_projects` first to resolve a project name to its ID before calling this.
 
 ```python
 def get_project_by_id(project_id: str) -> Optional[Dict]:

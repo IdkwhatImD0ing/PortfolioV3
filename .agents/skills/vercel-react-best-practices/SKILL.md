@@ -1,15 +1,15 @@
 ---
 name: vercel-react-best-practices
-description: React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements.
+description: React 19 and Next.js 15 performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, performance improvements, React 19 features (use hook, form actions, useOptimistic, ref-as-prop), or Next.js 15 patterns (async request APIs, caching).
 license: MIT
 metadata:
   author: vercel
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Vercel React Best Practices
 
-Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 57 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
+Comprehensive performance optimization guide for React 19 and Next.js 15 applications, maintained by Vercel. Contains 64 rules across 10 categories, prioritized by impact to guide automated refactoring and code generation.
 
 ## When to Apply
 
@@ -32,6 +32,8 @@ Reference these guidelines when:
 | 6 | Rendering Performance | MEDIUM | `rendering-` |
 | 7 | JavaScript Performance | LOW-MEDIUM | `js-` |
 | 8 | Advanced Patterns | LOW | `advanced-` |
+| 9 | React 19 Patterns | HIGH | `react19-` |
+| 10 | Next.js 15 Patterns | HIGH | `nextjs15-` |
 
 ## Quick Reference
 
@@ -115,6 +117,19 @@ Reference these guidelines when:
 - `advanced-event-handler-refs` - Store event handlers in refs
 - `advanced-init-once` - Initialize app once per app load
 - `advanced-use-latest` - useLatest for stable callback refs
+
+### 9. React 19 Patterns (HIGH)
+
+- `react19-use-hook` - Use use() hook for Promises and Context
+- `react19-form-actions` - Use useActionState for form handling
+- `react19-optimistic` - Use useOptimistic for instant feedback
+- `react19-ref-as-prop` - Pass ref as prop instead of forwardRef
+- `react19-ref-cleanup` - Use ref cleanup functions
+
+### 10. Next.js 15 Patterns (HIGH)
+
+- `nextjs15-async-request-apis` - Await async request APIs (cookies, headers, params, searchParams)
+- `nextjs15-caching-defaults` - Understand new caching defaults (no longer cached by default)
 
 ## How to Use
 

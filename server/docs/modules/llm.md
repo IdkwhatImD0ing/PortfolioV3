@@ -23,7 +23,7 @@ class LlmClient:
         self.agent = Agent(
             name="portfolio_agent",
             instructions=system_prompt,
-            model="gpt-5-mini",
+            model="gpt-5.4-mini",
             tools=self.prepare_functions(),
             input_guardrails=[security_guardrail],
             model_settings=ModelSettings(
@@ -106,8 +106,11 @@ Returns the list of available tools.
 def prepare_functions(self) -> List[Any]:
     return [
         display_education_page,
+        display_hackathons_page,
         display_homepage,
         display_landing_page,
+        display_resume_page,
+        display_architecture_page,
         display_project,
         search_projects,
         get_project_details,
@@ -146,6 +149,20 @@ elif event.name == "tool_output":
         content=str(output),
     )
 ```
+
+### Text Chat Status Events
+
+In text chat mode (`draft_text_response`), the LLM client emits `status` events
+to the frontend so users can see what the agent is doing:
+
+- `"Thinking..."` — emitted immediately when the stream starts
+- `"Searching projects..."` — emitted when `search_projects` is called
+- `"<message>"` — emitted when `get_project_details` is called (uses the tool's `message` arg)
+
+Status events use `TextChatStreamChunk(type="status", content="...")`. The frontend
+accumulates these as a list of steps with the profile avatar. Each step shows a spinner
+while active; when the next status or first content chunk arrives, previous steps switch
+to a checkmark. After the stream ends, completed steps linger briefly then fade out.
 
 ## Tool Message Pattern
 

@@ -92,6 +92,28 @@ def display_education_page(message: str) -> str:
 {"type": "navigation", "page": "education"}
 ```
 
+### display_architecture_page
+
+Navigate to the "How It Works" architecture page (Easter egg).
+
+```python
+@tool
+def display_architecture_page(message: str) -> str:
+    """Displays the architecture / 'how it works' page on the frontend.
+    
+    Args:
+        message: The message to speak before navigating
+    """
+    return "Successfully displayed the architecture page"
+```
+
+**Metadata sent:**
+```json
+{"type": "navigation", "page": "architecture"}
+```
+
+**Trigger phrases:** "how does this work", "what's under the hood", "show me the tech stack", "how was this built"
+
 ### display_project
 
 Navigate to a specific project page.
