@@ -68,12 +68,12 @@ gcloud run services describe "$SERVICE_NAME" --region "$REGION" --format='value(
 
 CUSTOM_DOMAIN="portfolio-ws.art3m1s.me"
 
-# Check if mapping exists
-if gcloud run domain-mappings describe "$CUSTOM_DOMAIN" --region "$REGION" >/dev/null 2>&1; then
+# Check if mapping exists (domain-mappings requires `beta` in newer gcloud CLI versions)
+if gcloud beta run domain-mappings describe --domain "$CUSTOM_DOMAIN" --region "$REGION" >/dev/null 2>&1; then
   echo "▶ Domain mapping for $CUSTOM_DOMAIN already exists."
 else
   echo "▶ Creating domain mapping for ${CUSTOM_DOMAIN}…"
-  gcloud run domain-mappings create --service "$SERVICE_NAME" \
+  gcloud beta run domain-mappings create --service "$SERVICE_NAME" \
     --domain "$CUSTOM_DOMAIN" \
     --region "$REGION"
 fi

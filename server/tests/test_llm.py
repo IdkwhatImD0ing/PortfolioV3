@@ -259,8 +259,18 @@ class TestLlmClientPrepareFunctions:
         """Test that prepare_functions returns expected tools."""
         client = LlmClient(call_id="test", mode="voice")
         tools = client.prepare_functions()
-        
-        assert len(tools) == 7
-        # Check that all expected tool names are present
-        tool_names = [getattr(t, "__name__", str(t)) for t in tools]
-        assert "display_education_page" in tool_names or any("education" in str(t) for t in tools)
+
+        expected_tool_names = {
+            "display_education_page",
+            "display_hackathons_page",
+            "display_homepage",
+            "display_landing_page",
+            "display_resume_page",
+            "display_architecture_page",
+            "display_project",
+            "search_projects",
+            "get_project_details",
+        }
+        tool_names = {getattr(t, "name", getattr(t, "__name__", str(t))) for t in tools}
+        assert tool_names == expected_tool_names
+        assert len(tools) == len(expected_tool_names)

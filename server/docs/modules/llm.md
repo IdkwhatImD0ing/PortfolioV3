@@ -18,8 +18,15 @@ The `LlmClient` class manages:
 
 ```python
 class LlmClient:
-    def __init__(self, call_id: str, debug=None):
+    def __init__(self, call_id: str, mode: str = "voice", debug=None):
         self.call_id = call_id
+        self.mode = mode
+
+        # Voice mode: no reasoning ("none") for minimum TTFT.
+        # Text mode: "low" reasoning for better answer quality.
+        system_prompt = voice_system_prompt if mode == "voice" else text_system_prompt
+        reasoning_effort = "none" if mode == "voice" else "low"
+
         self.agent = Agent(
             name="portfolio_agent",
             instructions=system_prompt,
@@ -27,11 +34,21 @@ class LlmClient:
             tools=self.prepare_functions(),
             input_guardrails=[security_guardrail],
             model_settings=ModelSettings(
-                reasoning=Reasoning(effort="minimal"),
+                verbosity="low",
+                reasoning=Reasoning(
+                    effort=reasoning_effort,
+                    summary="auto",
+                ),
             ),
         )
         self.debug = debug or os.getenv("LLM_DEBUG", "0") == "1"
 ```
+
+> **SDK requirement:** `effort="none"` requires `openai>=2.25` (added alongside
+> `gpt-5.4`). The pinned versions in `requirements.txt` are
+> `openai==2.32.0` and `openai-agents==0.14.4`. Older `openai` builds (≤ 1.x)
+> only accept `minimal | low | medium | high` and will raise a Pydantic
+> `literal_error` for `"none"`.
 
 ## Key Methods
 
@@ -216,11 +233,15 @@ def _log(self, *args, **kwargs):
 model_settings=ModelSettings(
     verbosity="low",
     reasoning=Reasoning(
-        effort="minimal",
+        effort=reasoning_effort,  # "none" for voice, "low" for text
         summary="auto",
     ),
 )
 ```
+
+Valid `effort` values on `gpt-5.4-mini` (per `openai>=2.25`):
+`none | minimal | low | medium | high | xhigh`. `"none"` skips the reasoning
+phase entirely, which is what voice mode uses to minimize time-to-first-token.
 
 ## Modifications
 

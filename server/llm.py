@@ -345,7 +345,9 @@ class LlmClient:
         self.call_id = call_id
         self.mode = mode
 
-        # Select appropriate prompt and reasoning based on mode
+        # Select appropriate prompt and reasoning based on mode.
+        # Voice mode disables reasoning ("none") for minimum latency on GPT-5.x.
+        # Text mode uses "low" reasoning for slightly better answer quality.
         system_prompt = voice_system_prompt if mode == "voice" else text_system_prompt
         reasoning_effort = "none" if mode == "voice" else "low"
 
