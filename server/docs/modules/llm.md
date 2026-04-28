@@ -181,17 +181,15 @@ accumulates these as a list of steps with the profile avatar. Each step shows a 
 while active; when the next status or first content chunk arrives, previous steps switch
 to a checkmark. After the stream ends, completed steps linger briefly then fade out.
 
-## Tool Message Pattern
+## Navigation Message Pattern
 
-Navigation tools have a `message` parameter spoken before action:
+Navigation display tools do not have a `message` parameter. They only emit navigation metadata when called:
 
 ```python
-if name in ["display_homepage", "display_education_page", ...]:
-    args_dict = json.loads(args)
-    message_to_speak = args_dict.get("message")
-    
-    if message_to_speak:
-        yield ResponseResponse(content=message_to_speak + " ", ...)
+if name == "display_education_page":
+    yield MetadataResponse(
+        metadata={"type": "navigation", "page": "education"}
+    )
 ```
 
 ## Error Handling

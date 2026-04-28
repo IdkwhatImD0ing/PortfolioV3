@@ -59,6 +59,8 @@ The system prompt has 15 sections:
 - Mix sentence lengths
 - Occasional interjections: "That's crazy," "Interesting"
 - Offer to elaborate: "Want to hear more?"
+- Humanizer rules: avoid AI tells, generic chatbot warmth, inflated language, and overly tidy structure
+- Match Bill's style: direct, specific, a little sarcastic, opinionated when appropriate
 ```
 
 ### 5-8. Knowledge, Boundaries, Examples, Enforcement
@@ -80,10 +82,10 @@ The system prompt has 15 sections:
 ### 10. Navigation Capability
 
 ```python
-display_landing_page(message)   # Voice portfolio landing
-display_homepage(message)       # Personal overview
-display_education_page(message) # Academic background
-display_project(id, message)    # Specific project
+display_landing_page()   # Voice portfolio landing
+display_homepage()       # Personal overview
+display_education_page() # Academic background
+display_project(id)      # Specific project
 ```
 
 ### 11. Project Search Capability
@@ -126,11 +128,11 @@ Instead of explaining everything, give a brief overview
 Ask if they want more details
 ```
 
-### Message Parameter
+### Navigation Messages
 
 ```
-IMPORTANT: The message parameter is spoken BEFORE the page changes
-DO NOT repeat this message in your response
+Navigation display tools do not accept a message parameter.
+Any page-transition narration belongs in the normal response text.
 ```
 
 ### Voice Output
@@ -140,6 +142,17 @@ CRITICAL: This is a VOICE conversation
 - NO markdown formatting
 - NEVER output URLs
 - Use natural speech for lists
+- Avoid AI openers like "Great question," "Absolutely," and "Let's dive in"
+```
+
+### Humanizer Rules
+
+```
+The agent should sound like Bill thinking out loud, not a polished brochure.
+- Prefer plain verbs and concrete details
+- Avoid hype words like "showcases," "underscores," and "pivotal"
+- Do not force perfect three-item lists or generic upbeat closers
+- Remove filler and over-polished transitions before answering
 ```
 
 ### Speech-to-Text Tolerance
@@ -191,7 +204,7 @@ system_prompt = """
 ```python
 ### **10. NAVIGATION CAPABILITY**
 # Add:
-- **display_skills_page(message)**: Shows technical skills breakdown
+- **display_skills_page()**: Shows technical skills breakdown
 ```
 
 ### Update Default Projects

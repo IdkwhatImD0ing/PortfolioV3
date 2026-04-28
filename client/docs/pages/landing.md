@@ -30,7 +30,7 @@ import LandingPage from "@/components/LandingPage";
 
 The backend navigates to this page by calling:
 ```python
-display_landing_page(message="Going back to the main page")
+display_landing_page()
 ```
 
 This sends a metadata event:

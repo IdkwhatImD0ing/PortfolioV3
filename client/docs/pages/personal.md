@@ -27,7 +27,7 @@ import PersonalPage from "@/components/personal";
 
 The backend navigates to this page by calling:
 ```python
-display_homepage(message="Let me show you my homepage")
+display_homepage()
 ```
 
 This sends a metadata event:

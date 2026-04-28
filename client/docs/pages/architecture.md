@@ -36,7 +36,7 @@ Horizontal infinite scroll of 12 technology items with fade-out edges.
 
 The backend navigates to this page by calling:
 ```python
-display_architecture_page(message="Let me show you how this all works")
+display_architecture_page()
 ```
 
 This sends a metadata event:

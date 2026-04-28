@@ -42,7 +42,7 @@ import HackathonsPage from "@/components/hackathons";
 
 The backend navigates to this page by calling:
 ```python
-display_hackathons_page(message="Let me show you my hackathon journey")
+display_hackathons_page()
 ```
 
 This sends a metadata event:

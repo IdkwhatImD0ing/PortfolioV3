@@ -4,7 +4,7 @@ Documentation for the page navigation tools used by the LLM.
 
 ## File Location
 
-`llm.py` (lines 188-230)
+`llm.py` (navigation tool definitions)
 
 ## Purpose
 
@@ -18,12 +18,8 @@ Navigate to the initial landing page.
 
 ```python
 @tool
-def display_landing_page(message: str) -> str:
-    """Displays the landing page on the frontend.
-    
-    Args:
-        message: The message to speak before navigating
-    """
+def display_landing_page() -> str:
+    """Displays the landing page on the frontend."""
     return "Successfully displayed the landing page"
 ```
 
@@ -38,12 +34,8 @@ Navigate to the personal/about page.
 
 ```python
 @tool
-def display_homepage(message: str) -> str:
-    """Displays Bill's personal homepage on the frontend.
-    
-    Args:
-        message: The message to speak before navigating
-    """
+def display_homepage() -> str:
+    """Displays Bill's personal homepage on the frontend."""
     return "Successfully displayed the personal homepage"
 ```
 
@@ -58,12 +50,8 @@ Navigate to the resume page.
 
 ```python
 @tool
-def display_resume_page(message: str) -> str:
-    """Displays Bill's resume page on the frontend.
-    
-    Args:
-        message: The message to speak before navigating
-    """
+def display_resume_page() -> str:
+    """Displays Bill's resume page on the frontend."""
     return "Successfully displayed the resume page"
 ```
 
@@ -78,12 +66,8 @@ Navigate to the education page.
 
 ```python
 @tool
-def display_education_page(message: str) -> str:
-    """Displays the education page on the frontend.
-    
-    Args:
-        message: The message to speak before navigating
-    """
+def display_education_page() -> str:
+    """Displays the education page on the frontend."""
     return "Successfully displayed the education page"
 ```
 
@@ -98,12 +82,8 @@ Navigate to the "How It Works" architecture page (Easter egg).
 
 ```python
 @tool
-def display_architecture_page(message: str) -> str:
-    """Displays the architecture / 'how it works' page on the frontend.
-    
-    Args:
-        message: The message to speak before navigating
-    """
+def display_architecture_page() -> str:
+    """Displays the architecture / 'how it works' page on the frontend."""
     return "Successfully displayed the architecture page"
 ```
 
@@ -120,12 +100,11 @@ Navigate to a specific project page.
 
 ```python
 @tool
-def display_project(id: str, message: str) -> str:
+def display_project(id: str) -> str:
     """Displays a specific project on the frontend.
     
     Args:
         id: The unique project ID (e.g., "dispatch-ai")
-        message: The message to speak before navigating
     """
     return f"Successfully displayed project: {id}"
 ```
@@ -135,38 +114,19 @@ def display_project(id: str, message: str) -> str:
 {"type": "navigation", "page": "project", "project_id": "dispatch-ai"}
 ```
 
-## Message Parameter
+## Spoken Messages
 
-All navigation tools have a `message` parameter. This is spoken aloud BEFORE the page changes:
-
-```python
-# In draft_response()
-if message_to_speak:
-    yield ResponseResponse(
-        response_id=response_id,
-        content=message_to_speak + " ",
-        content_complete=False,
-        end_call=False,
-    )
-```
-
-**Example usage by LLM:**
-```
-display_education_page(message="Let me show you my education background")
-```
-
-The message is spoken first, then the page changes.
+Navigation tools do not accept a `message` parameter and do not emit spoken `ResponseResponse` chunks. If the assistant should narrate a page transition, that narration belongs in the normal model response text.
 
 ## Metadata Event Flow
 
 ```
 1. LLM calls tool (e.g., display_education_page)
 2. Server yields ToolCallInvocationResponse
-3. Server yields ResponseResponse with message
-4. Server yields MetadataResponse
-5. Server yields ToolCallResultResponse
-6. Frontend receives metadata event
-7. Frontend calls setActivePage("education")
+3. Server yields MetadataResponse
+4. Server yields ToolCallResultResponse
+5. Frontend receives metadata event
+6. Frontend calls setActivePage("education")
 ```
 
 ## Adding a New Navigation Tool
@@ -175,12 +135,8 @@ The message is spoken first, then the page changes.
 
 ```python
 @tool
-def display_skills_page(message: str) -> str:
-    """Displays the skills page on the frontend.
-    
-    Args:
-        message: The message to speak before navigating
-    """
+def display_skills_page() -> str:
+    """Displays the skills page on the frontend."""
     return "Successfully displayed the skills page"
 ```
 
@@ -224,7 +180,7 @@ case "skills":
 In `prompts.py`, add to navigation section:
 
 ```
-- **display_skills_page(message)**: Shows the skills page
+- **display_skills_page()**: Shows the skills page
 ```
 
 ## Related Files

@@ -189,74 +189,50 @@ async def security_guardrail(
 
 
 @tool
-def display_resume_page(message: str) -> str:
-    """Displays Bill's resume page on the frontend.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Let me show you my resume")
-    """
+def display_resume_page() -> str:
+    """Displays Bill's resume page on the frontend."""
     return "Successfully displayed the resume page"
 
 
 @tool
-def display_education_page(message: str) -> str:
-    """Displays the education page on the frontend.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Let me show you my education")
-    """
+def display_education_page() -> str:
+    """Displays the education page on the frontend."""
     return "Successfully displayed the education page"
 
 
 @tool
-def display_homepage(message: str) -> str:
-    """Displays Bill's personal homepage on the frontend.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Let me show you my homepage")
-    """
+def display_homepage() -> str:
+    """Displays Bill's personal homepage on the frontend."""
     return "Successfully displayed the personal homepage"
 
 
 @tool
-def display_hackathons_page(message: str) -> str:
-    """Displays the hackathons map page on the frontend, showing Bill's hackathon journey across the US.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Let me show you my hackathon journey")
-    """
+def display_hackathons_page() -> str:
+    """Displays the hackathons map page on the frontend, showing Bill's hackathon journey across the US."""
     return "Successfully displayed the hackathons page"
 
 
 @tool
-def display_landing_page(message: str) -> str:
-    """Displays the landing page on the frontend - the initial voice-driven portfolio page.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Going back to the main page")
-    """
+def display_landing_page() -> str:
+    """Displays the landing page on the frontend - the initial voice-driven portfolio page."""
     return "Successfully displayed the landing page"
 
 
 @tool
-def display_architecture_page(message: str) -> str:
+def display_architecture_page() -> str:
     """Displays the architecture / 'how it works' page on the frontend, showing
     an interactive diagram of the portfolio's tech stack and request flow.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Let me show you how this all works")
     """
     return "Successfully displayed the architecture page"
 
 
 @tool
-def display_project(id: str, message: str) -> str:
+def display_project(id: str) -> str:
     """
     Displays a specific project on the frontend.
 
     Args:
         id: The unique project ID to display (e.g. "interviewgpt", "getitdone", "assignmenttracker")
-        message: The message to speak before navigating (e.g. "Let me show you this project")
 
     Returns:
         Confirmation message that the project was displayed
@@ -272,7 +248,7 @@ async def get_project_details(project_id: str, message: str) -> str:
 
     Args:
         project_id: The unique project ID (e.g. "dispatch-ai", "interviewgpt", "getitdone") or project name
-        message: The message to speak before fetching details (e.g. "Let me get more details about that project", "Let me tell you more about this one")
+        message: Optional status text for non-voice UI while fetching details.
 
     Returns:
         Full project details including the real project ID, name, summary, and complete details.
@@ -309,7 +285,7 @@ async def search_projects(query: str, message: str, num_results: int = 3) -> str
 
     Args:
         query: Description of what kind of projects to search for (e.g. "AI projects", "hackathon winners", "web development")
-        message: The message to speak before searching (e.g. "Let me search for those projects", "Looking through my projects")
+        message: Optional status text for non-voice UI while searching.
         num_results: How many projects to return (3-10). Use 3 for specific lookups, 5-10 for listing or broad queries.
 
     Returns:
@@ -509,33 +485,6 @@ class LlmClient:
                             )
                             name = getattr(tool_call, "name", "")
                             args = getattr(tool_call, "arguments", "") or ""
-
-                            # Parse arguments to get the message parameter if it exists
-                            message_to_speak = None
-                            if name in [
-                                "display_homepage",
-                                "display_landing_page",
-                                "display_education_page",
-                                "display_resume_page",
-                                "display_hackathons_page",
-                                "display_project",
-                                "search_projects",
-                                "get_project_details",
-                            ]:
-                                try:
-                                    args_dict = json.loads(args) if args else {}
-                                    message_to_speak = args_dict.get("message")
-
-                                    # If message is provided, yield it as a response first
-                                    if message_to_speak:
-                                        yield ResponseResponse(
-                                            response_id=response_id,
-                                            content=message_to_speak + " ",
-                                            content_complete=False,
-                                            end_call=False,
-                                        )
-                                except:
-                                    pass
 
                             yield ToolCallInvocationResponse(
                                 tool_call_id=call_id,
