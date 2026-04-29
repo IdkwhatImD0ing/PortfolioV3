@@ -21,7 +21,9 @@ MobileLayout
 │   ├── PersonalPage
 │   ├── EducationPage
 │   ├── ProjectPage
-│   └── ResumePage
+│   ├── ResumePage
+│   ├── HackathonsPage
+│   └── ArchitecturePage
 └── Bottom Drawer (custom CSS transition)
     ├── Drag Handle
     ├── Transcript (when expanded)
@@ -35,7 +37,7 @@ MobileLayout
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `activePage` | `"landing" \| "education" \| "project" \| "personal" \| "resume"` | Current page |
+| `activePage` | `"landing" \| "education" \| "project" \| "personal" \| "resume" \| "hackathon" \| "architecture"` | Current page |
 | `setActivePage` | `(page) => void` | Page navigation callback |
 | `currentProjectId` | `string?` | Selected project ID |
 | `isCalling` | `boolean` | Voice call active |
@@ -47,6 +49,8 @@ MobileLayout
 | `setChatMode` | `(mode) => void` | Switch input mode |
 | `sendTextMessage` | `(content: string) => void` | Send text message |
 | `isTextLoading` | `boolean` | Text response loading |
+| `statusSteps` | `StatusStep[]?` | Optional text response status steps |
+| `onNavigateToProject` | `(projectId: string) => void` | Optional project navigation callback for hackathon cards |
 
 ## Bottom Drawer
 
@@ -72,6 +76,8 @@ The mobile layout uses multiple scroll containers (main content and the transcri
 - **Main content** (`<main>`): `overflow-y-auto` + `overscroll-y-contain` prevents scroll chaining from the page content into the fixed bottom panel.
 - **Bottom panel**: `overflow-hidden` + `overscroll-contain` prevents its scroll events from propagating to the main content.
 - **Transcript area**: `overflow-y-auto` only when the drawer is expanded. When collapsed, switches to `overflow-hidden` (along with `opacity-0` and `pointer-events-none`) to fully remove it from the browser's scroll chain. This prevents mobile Safari/Chrome from targeting the hidden transcript as a scroll container, which could cause the main content scroll to appear "stuck."
+
+Page components rendered inside `MobileLayout` should avoid adding their own full-page `overflow-y-auto` wrappers. For example, `HackathonsPage` lets this mobile `<main>` own scrolling so the bottom drawer and page content do not create nested competing scroll areas.
 
 ## Page Transitions
 

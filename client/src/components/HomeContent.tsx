@@ -490,7 +490,7 @@ function HomeContentInner() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen">
+      <div className="flex h-screen overflow-hidden">
         <ErrorBoundary fallback={
           <div className="w-80 p-4 bg-gray-100 text-center">
             <p className="text-red-600">Sidebar error. Please refresh.</p>
@@ -511,7 +511,7 @@ function HomeContentInner() {
             onNavigateHome={() => setActivePage("landing")}
           />
         </ErrorBoundary>
-        <main id="main-content" className={`flex flex-1 min-h-screen ${activePage === "resume" ? "items-stretch" : activePage === "architecture" ? "overflow-y-auto items-start justify-center" : "items-center justify-center"}`}>
+        <main id="main-content" className={`flex flex-1 min-h-0 ${activePage === "resume" ? "items-stretch overflow-hidden" : activePage === "architecture" || activePage === "hackathon" ? "overflow-y-auto items-start justify-center" : "items-center justify-center overflow-hidden"}`}>
           <ErrorBoundary fallback={
             <div className="text-center p-8">
               <h2 className="text-xl font-bold text-red-600 mb-2">Page Error</h2>

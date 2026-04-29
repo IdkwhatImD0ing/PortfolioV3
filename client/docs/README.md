@@ -33,6 +33,9 @@ src/
 │   ├── education.tsx         # Education page
 │   ├── project.tsx           # Project page
 │   ├── personal.tsx          # Personal page
+│   ├── resume.tsx            # Resume page
+│   ├── hackathons.tsx        # Hackathon journey page
+│   ├── architecture.tsx      # Architecture explainer page
 │   └── ui/                   # shadcn/ui components
 ├── lib/
 │   └── dataCache.ts          # Project data caching
@@ -69,6 +72,9 @@ npm run lint         # Run ESLint
 - [pages/education.md](pages/education.md) - Education page component
 - [pages/project.md](pages/project.md) - Project page component
 - [pages/personal.md](pages/personal.md) - Personal page component
+- [pages/resume.md](pages/resume.md) - Resume page component
+- [pages/hackathons.md](pages/hackathons.md) - Hackathon journey component
+- [pages/architecture.md](pages/architecture.md) - Architecture explainer component
 
 ### API Routes
 - [api/create-web-call.md](api/create-web-call.md) - Retell web call creation

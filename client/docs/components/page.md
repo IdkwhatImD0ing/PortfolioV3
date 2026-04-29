@@ -36,7 +36,7 @@ const [isAgentTalking, setIsAgentTalking] = useState(false);
 
 ```typescript
 const [activePage, setActivePage] = useState<
-  "landing" | "education" | "project" | "personal"
+  "landing" | "education" | "project" | "personal" | "resume" | "hackathon" | "architecture"
 >("landing");
 const [currentProjectId, setCurrentProjectId] = useState<string | undefined>();
 ```
@@ -104,6 +104,9 @@ client.on("metadata", (metadata) => {
       case "landing": setActivePage("landing"); break;
       case "personal": setActivePage("personal"); break;
       case "education": setActivePage("education"); break;
+      case "resume": setActivePage("resume"); break;
+      case "hackathon": setActivePage("hackathon"); break;
+      case "architecture": setActivePage("architecture"); break;
       case "project":
         setActivePage("project");
         if (meta.project_id) setCurrentProjectId(meta.project_id);
@@ -112,6 +115,14 @@ client.on("metadata", (metadata) => {
   }
 });
 ```
+
+## Desktop Layout Scroll Ownership
+
+The desktop shell uses `h-screen overflow-hidden` so the voice sidebar remains fixed. Long-form pages opt into scrolling on the right-side `<main>` instead of creating page-level body scroll:
+
+- `resume`: stretches inside the right pane and manages its embedded content.
+- `architecture` and `hackathon`: use `overflow-y-auto items-start justify-center`.
+- Short pages remain centered with `overflow-hidden`.
 
 ## Key Functions
 

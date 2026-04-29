@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { motion, useReducedMotion } from "motion/react"
 import Image from "next/image"
-import { Mic, MousePointer, Keyboard, ArrowLeft, ArrowDown, FileText, MapPin, Cpu } from "lucide-react"
+import { Mic, MousePointer, Keyboard, ArrowLeft, ArrowDown, FileText, MapPin, Cpu, ExternalLink } from "lucide-react"
 
 interface LandingPageProps {
   onNavigate?: (page: string) => void
@@ -172,23 +172,32 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={() => onNavigate?.("resume")}
-                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200 cursor-pointer"
+                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-[color,border-color,background-color] duration-200 cursor-pointer"
               >
                 <FileText className="w-4 h-4 text-primary/70 group-hover:text-primary transition-colors" />
                 <span>Resume</span>
               </button>
+              <a
+                href="https://devpost.com/IdkwhatImD0ing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-[color,border-color,background-color] duration-200"
+              >
+                <ExternalLink className="w-4 h-4 text-primary/70 group-hover:text-primary transition-colors" aria-hidden="true" />
+                <span>Devpost</span>
+              </a>
               <button
                 onClick={() => onNavigate?.("hackathon")}
-                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200 cursor-pointer"
+                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-[color,border-color,background-color] duration-200 cursor-pointer"
               >
                 <MapPin className="w-4 h-4 text-primary/70 group-hover:text-primary transition-colors" />
-                <span>Hackathons</span>
+                <span>Hackathon Journey</span>
               </button>
               <a
                 href="https://github.com/IdkwhatImD0ing/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200"
+                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-[color,border-color,background-color] duration-200"
               >
                 <Image src="/github.svg" alt="" width={16} height={16} className="opacity-70 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
                 <span>GitHub</span>
@@ -197,14 +206,14 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
                 href="https://www.linkedin.com/in/bill-zhang1/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-all duration-200"
+                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-[color,border-color,background-color] duration-200"
               >
                 <Image src="/linkedin.svg" alt="" width={16} height={16} className="opacity-70 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
                 <span>LinkedIn</span>
               </a>
               <button
                 onClick={() => onNavigate?.("architecture")}
-                className="group flex items-center justify-center w-8 h-8 bg-card/30 border border-border/30 rounded-full text-foreground/30 hover:text-primary hover:border-primary/50 hover:bg-card/60 transition-all duration-300 cursor-pointer"
+                className="group flex items-center justify-center w-8 h-8 bg-card/30 border border-border/30 rounded-full text-foreground/30 hover:text-primary hover:border-primary/50 hover:bg-card/60 transition-[color,border-color,background-color] duration-300 cursor-pointer"
                 aria-label="How this portfolio works"
                 title="Curious how this works?"
               >

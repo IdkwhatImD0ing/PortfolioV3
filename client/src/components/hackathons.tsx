@@ -1,11 +1,24 @@
 "use client"
 
-import { memo, useState, useMemo } from "react"
+import { memo, useMemo, useState, type ElementType } from "react"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
-import { MapPin, Trophy, School, Calendar, ChevronDown, ExternalLink } from "lucide-react"
+import {
+  ArrowUpRight,
+  Calendar,
+  ChevronDown,
+  ExternalLink,
+  MapPin,
+  Route,
+  School,
+  Sparkles,
+  Trophy,
+} from "lucide-react"
 import dynamic from "next/dynamic"
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect"
 import { NumberTicker } from "@/components/ui/number-ticker"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   hackathonEvents,
   getMapDots,
@@ -13,10 +26,12 @@ import {
   type HackathonEvent,
 } from "@/data/hackathon-locations"
 
-const WorldMap = dynamic(() => import("@/components/ui/world-map"), {
+const DEVPOST_URL = "https://devpost.com/IdkwhatImD0ing"
+
+const USRouteMap = dynamic(() => import("@/components/ui/us-route-map"), {
   ssr: false,
   loading: () => (
-    <div className="w-full aspect-[2/1] rounded-lg bg-muted/30 animate-pulse" />
+    <div className="aspect-[2/1] w-full animate-pulse rounded-2xl bg-muted/30" />
   ),
 })
 
@@ -28,28 +43,47 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.07, delayChildren: 0.08 },
   },
 }
 
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: { y: 18, opacity: 0 },
   visible: {
     y: 0,
     opacity: 1,
-    transition: { type: "spring" as const, stiffness: 100, damping: 15 },
+    transition: { type: "spring" as const, stiffness: 110, damping: 18 },
   },
 }
 
-function StatCard({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  description,
+}: {
+  label: string
+  value: number
+  icon: ElementType
+  description: string
+}) {
   return (
-    <div className="flex flex-col items-center gap-1 p-3 rounded-xl bg-card/60 border border-border/50">
-      <Icon className="w-4 h-4 text-primary mb-1" />
-      <span className="text-2xl font-bold text-foreground tabular-nums">
-        <NumberTicker value={value} delay={0.3} />
-      </span>
-      <span className="text-xs text-muted-foreground">{label}</span>
-    </div>
+    <Card className="border-primary/15 bg-background/45 backdrop-blur-sm">
+      <CardContent className="flex h-full flex-col gap-3 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="rounded-full border border-primary/20 bg-primary/10 p-2 text-primary">
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <span className="text-3xl font-bold tabular-nums text-foreground">
+            <NumberTicker value={value} delay={0.25} />
+          </span>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">{label}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -62,68 +96,92 @@ function HackathonCard({
 }) {
   const [expanded, setExpanded] = useState(false)
   const prefersReducedMotion = useReducedMotion()
+  const projectPanelId = `hackathon-${event.id}-projects`
+  const hasAwards = event.awards.length > 0
+  const hasProjects = event.projects.length > 0
 
   return (
-    <motion.div
+    <motion.article
       layout={!prefersReducedMotion}
-      className="group relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 transition-colors hover:border-primary/40 hover:bg-card"
+      className="group flex h-full flex-col rounded-2xl border border-border/70 bg-card/75 p-5 backdrop-blur-sm [contain-intrinsic-size:320px] [content-visibility:auto] transition-[background-color,border-color,box-shadow] duration-200 hover:border-primary/45 hover:bg-card hover:shadow-[0_0_28px_rgba(162,89,255,0.12)]"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-foreground text-sm leading-tight truncate">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold leading-tight text-foreground text-pretty">
             {event.hackathon}
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-            <School className="w-3 h-3 shrink-0" />
-            <span className="truncate">{event.school}</span>
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <School className="h-3.5 w-3.5 shrink-0 text-primary/80" aria-hidden="true" />
+            <span className="min-w-0 truncate">{event.school}</span>
           </p>
         </div>
-        <span className="text-xs text-muted-foreground tabular-nums shrink-0">{event.year}</span>
+        <Badge className="shrink-0 border-primary/20 bg-primary/10 text-primary hover:bg-primary/15">
+          <Calendar className="mr-1 h-3 w-3" aria-hidden="true" />
+          <span className="tabular-nums">{event.year}</span>
+        </Badge>
       </div>
 
-      {event.awards.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {event.awards.map((award) => (
-            <span
-              key={award}
-              className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
-            >
-              <Trophy className="w-2.5 h-2.5" />
-              {award}
-            </span>
-          ))}
-        </div>
-      )}
+      <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span>{event.city}</span>
+      </p>
 
-      {event.projects.length > 0 && (
-        <div className="mt-2">
+      <div className="mt-4 flex min-h-[34px] flex-wrap gap-1.5">
+        {hasAwards ? (
+          event.awards.map((award) => (
+            <Badge
+              key={award}
+              variant="outline"
+              className="border-primary/25 bg-primary/10 text-[11px] font-medium text-primary"
+            >
+              <Trophy className="mr-1 h-3 w-3" aria-hidden="true" />
+              {award}
+            </Badge>
+          ))
+        ) : (
+          <span className="rounded-full border border-border/60 bg-muted/20 px-2.5 py-1 text-[11px] text-muted-foreground">
+            Built & shipped prototype
+          </span>
+        )}
+      </div>
+
+      {hasProjects && (
+        <div className="mt-auto pt-5">
           <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+            aria-controls={projectPanelId}
+            className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-background/40 px-3 py-2 text-left text-sm text-muted-foreground transition-[background-color,border-color,color] duration-200 hover:border-primary/35 hover:bg-primary/10 hover:text-foreground"
           >
+            <span>
+              {event.projects.length} project{event.projects.length > 1 ? "s" : ""} from this event
+            </span>
             <ChevronDown
-              className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`}
+              className={`h-4 w-4 shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+              aria-hidden="true"
             />
-            {event.projects.length} project{event.projects.length > 1 ? "s" : ""}
           </button>
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             {expanded && (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
+                id={projectPanelId}
+                initial={prefersReducedMotion ? false : { height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                exit={prefersReducedMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="overflow-hidden"
               >
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2 pt-3">
                   {event.projects.map((project) => (
                     <button
                       key={project.id}
+                      type="button"
                       onClick={() => onProjectClick?.(project.id)}
-                      className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-muted/50 text-foreground hover:bg-primary/10 hover:text-primary border border-border/50 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-[background-color,border-color,color] duration-200 hover:border-primary/45 hover:bg-primary/15 hover:text-accent"
                     >
                       {project.name}
-                      <ExternalLink className="w-2.5 h-2.5" />
+                      <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
                     </button>
                   ))}
                 </div>
@@ -132,7 +190,7 @@ function HackathonCard({
           </AnimatePresence>
         </div>
       )}
-    </motion.div>
+    </motion.article>
   )
 }
 
@@ -141,6 +199,15 @@ type SortMode = "recent" | "awards"
 function HackathonsPage({ onNavigateToProject }: HackathonsPageProps) {
   const [sortMode, setSortMode] = useState<SortMode>("recent")
   const mapDots = useMemo(() => getMapDots(), [])
+
+  const featuredEvents = useMemo(
+    () =>
+      [...hackathonEvents]
+        .filter((event) => event.awards.length > 0)
+        .sort((a, b) => b.awards.length - a.awards.length || b.year - a.year)
+        .slice(0, 3),
+    []
+  )
 
   const sortedEvents = useMemo(() => {
     const events = [...hackathonEvents]
@@ -151,77 +218,225 @@ function HackathonsPage({ onNavigateToProject }: HackathonsPageProps) {
   }, [sortMode])
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-y-auto">
-      <motion.div
+    <div className="min-h-full w-full bg-background text-foreground">
+      <motion.main
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="max-w-6xl mx-auto px-4 py-8 md:py-12 space-y-8"
+        className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 py-6 pb-24 sm:px-6 md:py-10 lg:px-8"
       >
-        {/* Title */}
-        <motion.div variants={itemVariants} className="text-center space-y-2">
-          <TextGenerateEffect
-            words="Hackathon Journey"
-            className="text-3xl md:text-4xl"
-            duration={0.4}
-          />
-          <p className="text-muted-foreground text-sm md:text-base">
-            From UC Santa Cruz to hackathons across the country
-          </p>
-        </motion.div>
+        <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-56 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
 
-        {/* Stats */}
-        <motion.div
+        <motion.section
           variants={itemVariants}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto"
+          className="relative overflow-hidden rounded-3xl border border-primary/20 bg-card/55 p-6 shadow-[0_0_45px_rgba(162,89,255,0.10)] backdrop-blur-sm md:p-8"
+          aria-labelledby="hackathon-title"
         >
-          <StatCard label="Hackathons" value={stats.totalHackathons} icon={Calendar} />
-          <StatCard label="Awards" value={stats.totalAwards} icon={Trophy} />
-          <StatCard label="Schools" value={stats.uniqueSchools} icon={School} />
-          <StatCard label="States" value={stats.uniqueStates} icon={MapPin} />
-        </motion.div>
+          <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-secondary/10" />
+          <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
+            <div className="max-w-3xl">
+              <Badge className="mb-4 border-primary/25 bg-primary/10 text-primary hover:bg-primary/15">
+                <Sparkles className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                Builder Log
+              </Badge>
+              <h1 id="hackathon-title" className="sr-only">
+                Hackathon Journey
+              </h1>
+              <div aria-hidden="true">
+                <TextGenerateEffect
+                  words="Hackathon Journey"
+                  className="text-4xl [&_.text-2xl]:text-4xl md:text-6xl md:[&_.text-2xl]:text-6xl"
+                  duration={0.35}
+                />
+              </div>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+                A map of prototypes, wins, late nights, and teams across the country, from UC
+                Santa Cruz to national AI and product competitions.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button
+                  asChild
+                  className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <a href={DEVPOST_URL} target="_blank" rel="noopener noreferrer">
+                    View Devpost
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="rounded-full border-primary/30 bg-background/40 text-foreground hover:bg-primary/10 hover:text-foreground"
+                >
+                  <a href="#hackathon-events">
+                    Browse Events
+                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </Button>
+              </div>
+            </div>
 
-        {/* Map */}
-        <motion.div variants={itemVariants} className="relative">
-          <WorldMap dots={mapDots} lineColor="#a259ff" />
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-background/80 backdrop-blur-sm rounded-full px-3 py-1 border border-border/50">
-            <div className="w-2 h-2 rounded-full bg-[#a259ff] animate-pulse" />
-            Connections from UC Santa Cruz
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard
+                label="Hackathons"
+                value={stats.totalHackathons}
+                icon={Calendar}
+                description="events attended"
+              />
+              <StatCard
+                label="Awards"
+                value={stats.totalAwards}
+                icon={Trophy}
+                description="judged wins"
+              />
+              <StatCard
+                label="Schools"
+                value={stats.uniqueSchools}
+                icon={School}
+                description="host campuses"
+              />
+              <StatCard
+                label="States"
+                value={stats.uniqueStates}
+                icon={MapPin}
+                description="competition stops"
+              />
+            </div>
           </div>
-        </motion.div>
+        </motion.section>
 
-        {/* Sort controls */}
-        <motion.div variants={itemVariants} className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">All Hackathons</h2>
-          <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
-            {(["recent", "awards"] as SortMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setSortMode(mode)}
-                className={`text-xs px-3 py-1.5 rounded-md transition-colors capitalize ${
-                  sortMode === mode
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {mode === "recent" ? "Most Recent" : "Most Awards"}
-              </button>
+        <motion.section
+          variants={itemVariants}
+          className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]"
+          aria-label="Hackathon map and highlights"
+        >
+          <Card className="overflow-hidden border-border/70 bg-card/60 backdrop-blur-sm">
+            <CardContent className="p-0">
+              <div className="border-b border-border/60 px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">United States Route Map</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Animated connections from UC Santa Cruz to each US host location.
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
+                    <Route className="mr-1 h-3 w-3" aria-hidden="true" />
+                    {mapDots.length} stops
+                  </Badge>
+                </div>
+              </div>
+              <div className="relative px-3 py-4 sm:px-5">
+                <USRouteMap
+                  dots={mapDots}
+                  lineColor="#a259ff"
+                  ariaLabel="United States hackathon route map"
+                />
+                <div className="absolute bottom-6 left-6 flex items-center gap-2 rounded-full border border-border/60 bg-background/85 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm">
+                  <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
+                  Connections from UC Santa Cruz
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70 bg-card/60 backdrop-blur-sm">
+            <CardContent className="p-5">
+              <div className="mb-5">
+                <h2 className="text-lg font-semibold text-foreground">Highest-Signal Wins</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  A few award-heavy stops from the broader journey.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {featuredEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="rounded-2xl border border-border/60 bg-background/40 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-sm font-semibold leading-snug text-foreground">
+                        {event.hackathon}
+                      </h3>
+                      <span className="text-xs tabular-nums text-muted-foreground">
+                        {event.year}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{event.school}</p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {event.awards.slice(0, 2).map((award) => (
+                        <Badge
+                          key={award}
+                          variant="outline"
+                          className="border-primary/25 bg-primary/10 text-[10px] text-primary"
+                        >
+                          {award}
+                        </Badge>
+                      ))}
+                      {event.awards.length > 2 && (
+                        <Badge variant="outline" className="border-border/70 text-[10px]">
+                          +{event.awards.length - 2} more
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.section>
+
+        <motion.section
+          id="hackathon-events"
+          variants={itemVariants}
+          className="mt-10 scroll-mt-8"
+          aria-labelledby="hackathon-events-title"
+        >
+          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 id="hackathon-events-title" className="text-2xl font-semibold text-foreground">
+                Event Archive
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sort the full journey by recency or award density, then jump into related projects.
+              </p>
+            </div>
+            <div className="inline-flex w-fit rounded-full border border-border/70 bg-muted/30 p-1">
+              {(["recent", "awards"] as SortMode[]).map((mode) => {
+                const isActive = sortMode === mode
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setSortMode(mode)}
+                    aria-pressed={isActive}
+                    className={`rounded-full px-4 py-2 text-xs font-medium transition-[background-color,color,box-shadow] duration-200 ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {mode === "recent" ? "Most Recent" : "Most Awards"}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <motion.div
+            variants={containerVariants}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            role="list"
+          >
+            {sortedEvents.map((event) => (
+              <motion.div key={event.id} variants={itemVariants} role="listitem">
+                <HackathonCard event={event} onProjectClick={onNavigateToProject} />
+              </motion.div>
             ))}
-          </div>
-        </motion.div>
-
-        {/* Cards grid */}
-        <motion.div
-          variants={containerVariants}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-        >
-          {sortedEvents.map((event) => (
-            <motion.div key={event.id} variants={itemVariants}>
-              <HackathonCard event={event} onProjectClick={onNavigateToProject} />
-            </motion.div>
-          ))}
-        </motion.div>
-      </motion.div>
+          </motion.div>
+        </motion.section>
+      </motion.main>
     </div>
   )
 }

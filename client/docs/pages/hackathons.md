@@ -8,7 +8,7 @@ Documentation for the hackathons map page component.
 
 ## Purpose
 
-Displays an interactive map of Bill Zhang's hackathon journey across the US, along with animated stats and a sortable card grid of all hackathon events. Uses Aceternity's World Map component to render animated connection lines from UC Santa Cruz (home base) to every hackathon location.
+Displays Bill Zhang's hackathon journey as a polished portfolio page: hero narrative, animated stats, a bounded United States route map, featured award-heavy events, and a sortable archive of hackathon cards. Uses the `USRouteMap` component to render a real US outline, state borders, and connection lines from UC Santa Cruz (home base) to every unique US hackathon location.
 
 ## Props
 
@@ -53,31 +53,49 @@ This sends a metadata event:
 }
 ```
 
+## Homepage Entry Points
+
+`LandingPage` exposes hackathon content as two separate Quick Reference pills:
+
+- **Devpost** — opens `https://devpost.com/IdkwhatImD0ing` in a new tab.
+- **Hackathon Journey** — calls `onNavigate("hackathon")` and shows this in-site page.
+
 ## Component Features
 
-### Animated World Map
-- Uses Aceternity's `WorldMap` component (dynamically imported to avoid SSR issues)
-- Curved connection lines radiate from UC Santa Cruz to each unique hackathon location
+### Hero and Stats
+- Large animated title using `TextGenerateEffect`
+- Primary CTA to Devpost and secondary in-page anchor to the event archive
+- Four `NumberTicker` stat cards: hackathons, awards, schools, states
+
+### Animated United States Route Map
+- Uses `USRouteMap`, built with `@vnedyalk0v/react19-simple-maps` and `us-atlas/states-10m.json`
+- Renders state fills, state borders, and an explicit United States outline
+- Connection lines radiate from UC Santa Cruz to each unique hackathon location
 - Line color: `#a259ff` (portfolio accent purple)
-- Pulsing dots at start/end points
+- The map is wrapped in a card with a legend so it reads as a page section, not a loose full-screen element
 
-### Animated Stats Bar
-- Uses Magic UI's `NumberTicker` for counting animations
-- Displays: total hackathons, total awards, unique schools, unique states
+### Featured Wins
+- Highlights the top award-heavy events in a side panel next to the map
+- Keeps the full archive below so the highlight panel does not hide data
 
-### Hackathon Card Grid
+### Event Archive
 - Sortable by "Most Recent" or "Most Awards"
-- Each card shows: hackathon name, school, year, awards (as badges), and expandable project list
+- Each card shows: hackathon name, school, city, year, awards (as badges), and expandable project list
 - Project links are clickable and navigate to the project detail page via `onNavigateToProject`
+- Cards use `content-visibility: auto` to keep long archive rendering lighter
 
-### Title Animation
-- Uses Aceternity's `TextGenerateEffect` for a word-by-word reveal animation
+## Scroll Ownership
+
+The hackathon component does **not** create its own scroll container. Scroll is owned by the layout shell:
+
+- Desktop: `HomeContent` gives the right-side `<main>` `overflow-y-auto` when `activePage === "hackathon"`, while the outer `h-screen` shell uses `overflow-hidden` so the left sidebar remains fixed.
+- Mobile: `MobileLayout` owns page scrolling through its `<main className="overflow-y-auto ...">`, while the fixed bottom chat panel remains separate.
 
 ## Data Source
 
 `src/data/hackathon-locations.ts` — static data file with:
 - `hackathonEvents[]` — all hackathon entries with coordinates, awards, and project IDs
-- `getMapDots()` — generates `{start, end}` coordinate pairs for the World Map
+- `getMapDots()` — generates `{start, end}` coordinate pairs for the US route map
 - `stats` — pre-computed statistics (total hackathons, awards, schools, states)
 - `HOME_BASE` — UC Santa Cruz coordinates (the origin point for all map lines)
 
@@ -86,6 +104,13 @@ This sends a metadata event:
 When this page is active:
 ```
 https://example.com?page=hackathon
+```
+
+## External Profile
+
+Devpost profile:
+```
+https://devpost.com/IdkwhatImD0ing
 ```
 
 ## Modifications
@@ -111,14 +136,16 @@ https://example.com?page=hackathon
 
 ### Change Map Appearance
 
-- Line color: change the `lineColor` prop on `<WorldMap>` in `hackathons.tsx`
-- Map dot/background colors: edit `src/components/ui/world-map.tsx`
+- Line color: change the `lineColor` prop on `<USRouteMap>` in `hackathons.tsx`
+- Map outline, state fill, borders, markers, or route styling: edit `src/components/ui/us-route-map.tsx`
 
 ## Dependencies
 
-- `dotted-map` — generates the SVG dot grid for the world map background
 - `motion/react` — entrance animations and card expand/collapse
-- `@/components/ui/world-map` — Aceternity World Map component
+- `@vnedyalk0v/react19-simple-maps` — React 19-compatible SVG map components
+- `us-atlas` — prebuilt US TopoJSON data
+- `@/components/ui/button`, `badge`, `card` — shadcn-style UI primitives adapted to the portfolio theme
+- `@/components/ui/us-route-map` — United States route map component
 - `@/components/ui/text-generate-effect` — Aceternity text animation
 - `@/components/ui/number-ticker` — Magic UI animated number counter
 
@@ -126,6 +153,6 @@ https://example.com?page=hackathon
 
 - [../components/page.md](../components/page.md) — Parent component (HomeContent)
 - `src/data/hackathon-locations.ts` — Hackathon data
-- `src/components/ui/world-map.tsx` — World Map component
+- `src/components/ui/us-route-map.tsx` — United States route map component
 - `src/components/ui/text-generate-effect.tsx` — Text animation
 - `src/components/ui/number-ticker.tsx` — Number animation
