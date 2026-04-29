@@ -63,11 +63,12 @@ A "Quick Reference" section sits between the example questions and the CTA. It p
 
 - **Resume** — Navigates to the resume page via `onNavigate("resume")`
 - **Devpost** — Opens `https://devpost.com/IdkwhatImD0ing` in a new tab
-- **Hackathon Journey** — Navigates to the in-site hackathon page via `onNavigate("hackathon")`
 - **GitHub** — Opens `https://github.com/IdkwhatImD0ing/` in a new tab
 - **LinkedIn** — Opens `https://www.linkedin.com/in/bill-zhang1/` in a new tab
 
 Each link is styled as a rounded pill with an icon and label. External links use standard `<a>` tags; in-app navigation uses buttons that call `onNavigate`. GitHub and LinkedIn icons use the SVGs from `/public/`. The section animates in with the same `motion.div` pattern as the rest of the page (delay: 0.55s).
+
+The Hackathon Journey page is intentionally not included as a Quick Reference shortcut. Users should reach it conversationally by asking the assistant about hackathons, which lets the LLM call `display_hackathons_page()` and navigate to `?page=hackathon`.
 
 ## Modifications
 

@@ -53,12 +53,14 @@ This sends a metadata event:
 }
 ```
 
-## Homepage Entry Points
+## Entry Points
 
-`LandingPage` exposes hackathon content as two separate Quick Reference pills:
+Hackathon Journey is a conversation-driven page, not a homepage Quick Reference shortcut:
 
-- **Devpost** — opens `https://devpost.com/IdkwhatImD0ing` in a new tab.
-- **Hackathon Journey** — calls `onNavigate("hackathon")` and shows this in-site page.
+- The LLM should call `display_hackathons_page()` when users ask about hackathons, hackathon wins, where Bill has competed, or the hackathon map.
+- The frontend handles the resulting metadata by activating `?page=hackathon`.
+- Devpost remains available as an external Quick Reference link from the landing page.
+- Direct URLs can still open the page with `?page=hackathon`.
 
 ## Component Features
 

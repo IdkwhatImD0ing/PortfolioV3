@@ -76,6 +76,24 @@ def display_education_page() -> str:
 {"type": "navigation", "page": "education"}
 ```
 
+### display_hackathons_page
+
+Navigate to the hackathon journey page.
+
+```python
+@tool
+def display_hackathons_page() -> str:
+    """Displays the hackathons map page on the frontend, showing Bill's hackathon journey across the US."""
+    return "Successfully displayed the hackathons page"
+```
+
+**Metadata sent:**
+```json
+{"type": "navigation", "page": "hackathon"}
+```
+
+**Trigger phrases:** "show me your hackathons", "hackathon journey", "hackathon map", "where have you competed", "hackathon wins"
+
 ### display_architecture_page
 
 Navigate to the "How It Works" architecture page (Easter egg).
@@ -149,6 +167,8 @@ def prepare_functions(self) -> List[Any]:
         display_homepage,
         display_landing_page,
         display_resume_page,
+        display_hackathons_page,
+        display_architecture_page,
         display_project,
         search_projects,
         get_project_details,

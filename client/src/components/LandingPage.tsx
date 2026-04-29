@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { motion, useReducedMotion } from "motion/react"
 import Image from "next/image"
-import { Mic, MousePointer, Keyboard, ArrowLeft, ArrowDown, FileText, MapPin, Cpu, ExternalLink } from "lucide-react"
+import { Mic, MousePointer, Keyboard, ArrowLeft, ArrowDown, FileText, Cpu, ExternalLink } from "lucide-react"
 
 interface LandingPageProps {
   onNavigate?: (page: string) => void
@@ -155,7 +155,7 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
                 </div>
 
                 <div className="bg-secondary/10 border border-secondary/30 rounded-lg p-2" role="listitem">
-                  <p className="text-xs text-foreground font-medium">&quot;Tell me about your experience&quot;</p>
+                  <p className="text-xs text-foreground font-medium">&quot;Show me your hackathon journey&quot;</p>
                 </div>
               </div>
             </div>
@@ -186,13 +186,6 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
                 <ExternalLink className="w-4 h-4 text-primary/70 group-hover:text-primary transition-colors" aria-hidden="true" />
                 <span>Devpost</span>
               </a>
-              <button
-                onClick={() => onNavigate?.("hackathon")}
-                className="group flex items-center gap-2 px-4 py-2 bg-card/50 border border-border/50 rounded-full text-sm text-foreground/70 hover:text-foreground hover:border-primary/50 transition-[color,border-color,background-color] duration-200 cursor-pointer"
-              >
-                <MapPin className="w-4 h-4 text-primary/70 group-hover:text-primary transition-colors" />
-                <span>Hackathon Journey</span>
-              </button>
               <a
                 href="https://github.com/IdkwhatImD0ing/"
                 target="_blank"

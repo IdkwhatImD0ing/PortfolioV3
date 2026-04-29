@@ -84,7 +84,10 @@ The system prompt has 15 sections:
 ```python
 display_landing_page()   # Voice portfolio landing
 display_homepage()       # Personal overview
+display_hackathons_page() # Hackathon journey and US map
 display_education_page() # Academic background
+display_resume_page()    # Resume and qualifications
+display_architecture_page() # Portfolio architecture explainer
 display_project(id)      # Specific project
 ```
 
