@@ -30,7 +30,7 @@ import LandingPage from "@/components/LandingPage";
 
 The backend navigates to this page by calling:
 ```python
-display_landing_page(message="Going back to the main page")
+display_landing_page()
 ```
 
 This sends a metadata event:
@@ -62,10 +62,13 @@ The `isMobile` prop controls these adaptations and is set to `true` by `MobileLa
 A "Quick Reference" section sits between the example questions and the CTA. It provides direct access to key resources without needing to interact with the chat:
 
 - **Resume** — Navigates to the resume page via `onNavigate("resume")`
+- **Devpost** — Opens `https://devpost.com/IdkwhatImD0ing` in a new tab
 - **GitHub** — Opens `https://github.com/IdkwhatImD0ing/` in a new tab
 - **LinkedIn** — Opens `https://www.linkedin.com/in/bill-zhang1/` in a new tab
 
-Each link is styled as a rounded pill with an icon and label. GitHub and LinkedIn icons use the SVGs from `/public/`. The section animates in with the same `motion.div` pattern as the rest of the page (delay: 0.55s).
+Each link is styled as a rounded pill with an icon and label. External links use standard `<a>` tags; in-app navigation uses buttons that call `onNavigate`. GitHub and LinkedIn icons use the SVGs from `/public/`. The section animates in with the same `motion.div` pattern as the rest of the page (delay: 0.55s).
+
+The Hackathon Journey page is intentionally not included as a Quick Reference shortcut. Users should reach it conversationally by asking the assistant about hackathons, which lets the LLM call `display_hackathons_page()` and navigate to `?page=hackathon`.
 
 ## Modifications
 
@@ -88,7 +91,7 @@ Note: The `startCall` function is passed from the parent `page.tsx`.
 
 ### Update Quick Reference Links
 
-Edit the Quick Reference section in `src/components/LandingPage.tsx`. Each link is a standard `<a>` tag with icon and label. To add a new link, duplicate an existing pill and update the `href`, icon, and label.
+Edit the Quick Reference section in `src/components/LandingPage.tsx`. Use a standard `<a>` tag for external destinations and a `<button>` for in-app navigation through `onNavigate`.
 
 ## Related Files
 

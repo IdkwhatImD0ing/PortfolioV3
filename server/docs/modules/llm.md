@@ -18,20 +18,37 @@ The `LlmClient` class manages:
 
 ```python
 class LlmClient:
-    def __init__(self, call_id: str, debug=None):
+    def __init__(self, call_id: str, mode: str = "voice", debug=None):
         self.call_id = call_id
+        self.mode = mode
+
+        # Voice mode: no reasoning ("none") for minimum TTFT.
+        # Text mode: "low" reasoning for better answer quality.
+        system_prompt = voice_system_prompt if mode == "voice" else text_system_prompt
+        reasoning_effort = "none" if mode == "voice" else "low"
+
         self.agent = Agent(
             name="portfolio_agent",
             instructions=system_prompt,
-            model="gpt-5-mini",
+            model="gpt-5.4-mini",
             tools=self.prepare_functions(),
             input_guardrails=[security_guardrail],
             model_settings=ModelSettings(
-                reasoning=Reasoning(effort="minimal"),
+                verbosity="low",
+                reasoning=Reasoning(
+                    effort=reasoning_effort,
+                    summary="auto",
+                ),
             ),
         )
         self.debug = debug or os.getenv("LLM_DEBUG", "0") == "1"
 ```
+
+> **SDK requirement:** `effort="none"` requires `openai>=2.25` (added alongside
+> `gpt-5.4`). The pinned versions in `requirements.txt` are
+> `openai==2.32.0` and `openai-agents==0.14.4`. Older `openai` builds (≤ 1.x)
+> only accept `minimal | low | medium | high` and will raise a Pydantic
+> `literal_error` for `"none"`.
 
 ## Key Methods
 
@@ -106,8 +123,11 @@ Returns the list of available tools.
 def prepare_functions(self) -> List[Any]:
     return [
         display_education_page,
+        display_hackathons_page,
         display_homepage,
         display_landing_page,
+        display_resume_page,
+        display_architecture_page,
         display_project,
         search_projects,
         get_project_details,
@@ -147,17 +167,29 @@ elif event.name == "tool_output":
     )
 ```
 
-## Tool Message Pattern
+### Text Chat Status Events
 
-Navigation tools have a `message` parameter spoken before action:
+In text chat mode (`draft_text_response`), the LLM client emits `status` events
+to the frontend so users can see what the agent is doing:
+
+- `"Thinking..."` — emitted immediately when the stream starts
+- `"Searching projects..."` — emitted when `search_projects` is called
+- `"<message>"` — emitted when `get_project_details` is called (uses the tool's `message` arg)
+
+Status events use `TextChatStreamChunk(type="status", content="...")`. The frontend
+accumulates these as a list of steps with the profile avatar. Each step shows a spinner
+while active; when the next status or first content chunk arrives, previous steps switch
+to a checkmark. After the stream ends, completed steps linger briefly then fade out.
+
+## Navigation Message Pattern
+
+Navigation display tools do not have a `message` parameter. They only emit navigation metadata when called:
 
 ```python
-if name in ["display_homepage", "display_education_page", ...]:
-    args_dict = json.loads(args)
-    message_to_speak = args_dict.get("message")
-    
-    if message_to_speak:
-        yield ResponseResponse(content=message_to_speak + " ", ...)
+if name == "display_education_page":
+    yield MetadataResponse(
+        metadata={"type": "navigation", "page": "education"}
+    )
 ```
 
 ## Error Handling
@@ -199,11 +231,15 @@ def _log(self, *args, **kwargs):
 model_settings=ModelSettings(
     verbosity="low",
     reasoning=Reasoning(
-        effort="minimal",
+        effort=reasoning_effort,  # "none" for voice, "low" for text
         summary="auto",
     ),
 )
 ```
+
+Valid `effort` values on `gpt-5.4-mini` (per `openai>=2.25`):
+`none | minimal | low | medium | high | xhigh`. `"none"` skips the reasoning
+phase entirely, which is what voice mode uses to minimize time-to-first-token.
 
 ## Modifications
 

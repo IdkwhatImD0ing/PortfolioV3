@@ -27,7 +27,7 @@ import ResumePage from "@/components/resume";
 
 The backend navigates to this page by calling:
 ```python
-display_resume_page(message="Let me show you my resume")
+display_resume_page()
 ```
 
 This sends a metadata event:

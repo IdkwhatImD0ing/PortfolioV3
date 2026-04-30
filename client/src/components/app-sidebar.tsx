@@ -18,6 +18,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
+import { ChatStatusIndicator, type StatusStep } from "@/components/chat-status-indicator"
 
 interface TranscriptEntry {
   role: "agent" | "user"
@@ -41,6 +42,7 @@ interface VoiceChatSidebarProps {
   // Text chat props
   sendTextMessage: (content: string) => void
   isTextLoading: boolean
+  statusSteps?: StatusStep[]
 
   // Navigation
   activePage?: string
@@ -57,6 +59,7 @@ const VoiceChatSidebarComponent = ({
   setChatMode,
   sendTextMessage,
   isTextLoading,
+  statusSteps = [],
   activePage,
   onNavigateHome,
 }: VoiceChatSidebarProps) => {
@@ -370,16 +373,34 @@ const VoiceChatSidebarComponent = ({
           or similar library to maintain performance (Web Interface Guideline: Large lists) */}
       <ScrollArea ref={scrollAreaRef} className="grow px-4 py-2 transcript-container">
         <div className="space-y-4" aria-live="polite" aria-atomic="false">
-          <AnimatePresence>
-            {transcript.map((entry, index) => (
-              <motion.div
-                key={`${entry.role}-${index}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className={`flex items-start space-x-2 ${entry.role === "agent" ? "justify-start" : "justify-end"}`}
-              >
-                {entry.role === "agent" && (
+          {chatMode === "text" && transcript.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-start space-x-2 justify-start"
+            >
+              <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+                <Image src="/profile.webp" alt="Bill" width={32} height={32} className="w-full h-full object-cover" />
+              </div>
+              <div className="p-3 rounded-lg max-w-[80%] bg-card text-card-foreground border border-border prose-chat">
+                <p>Hi! I&apos;m Bill&apos;s AI assistant. Ask me anything about his projects, experience, or skills — I&apos;m here to help!</p>
+              </div>
+            </motion.div>
+          )}
+          {transcript.map((entry, index) => {
+            const isLastAgent = entry.role === "agent" && index === transcript.length - 1;
+            const hasStatusSteps = isLastAgent && statusSteps.length > 0;
+
+            if (entry.role === "agent") {
+              return (
+                <motion.div
+                  key={`transcript-${index}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-start space-x-2 justify-start"
+                >
                   <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden border border-primary/20">
                     <Image
                       src="/profile.webp"
@@ -389,71 +410,87 @@ const VoiceChatSidebarComponent = ({
                       className="w-full h-full object-cover"
                     />
                   </div>
-                )}
-                <div
-                  className={`p-3 rounded-lg max-w-[80%] ${entry.role === "agent"
-                    ? "bg-card text-card-foreground border border-border prose-chat"
-                    : "bg-primary text-primary-foreground"
-                    }`}
-                >
-                  {entry.role === "agent" ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {entry.content}
-                    </ReactMarkdown>
-                  ) : (
-                    entry.content
-                  )}
-                </div>
-                {entry.role === "user" && (
-                  <div 
-                    className="shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
-                    aria-label="You"
-                    role="img"
-                  >
-                    <User size={16} className="text-secondary-foreground" aria-hidden="true" />
+                  <div className="flex flex-col gap-2 max-w-[80%]">
+                    {hasStatusSteps && (
+                      <ChatStatusIndicator steps={statusSteps} showAvatar={false} />
+                    )}
+                    <div className="p-3 rounded-lg bg-card text-card-foreground border border-border prose-chat">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {entry.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
-                )}
+                </motion.div>
+              );
+            }
+
+            return (
+              <motion.div
+                key={`transcript-${index}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-start space-x-2 justify-end"
+              >
+                <div className="p-3 rounded-lg max-w-[80%] bg-primary text-primary-foreground">
+                  {entry.content}
+                </div>
+                <div 
+                  className="shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
+                  aria-label="You"
+                  role="img"
+                >
+                  <User size={16} className="text-secondary-foreground" aria-hidden="true" />
+                </div>
               </motion.div>
-            ))}
-          </AnimatePresence>
-          
-          {/* Typing indicator - appears as agent message with animated dots */}
-          {chatMode === "text" && isTextLoading && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-start space-x-2 justify-start"
-            >
-              <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden border border-primary/20">
-                <Image
-                  src="/profile.webp"
-                  alt="Bill"
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-3 rounded-lg bg-card border border-border">
-                <div className="flex gap-1" role="status" aria-label="AI is typing">
-                  <motion.span
-                    className="w-2 h-2 bg-muted-foreground rounded-full"
-                    animate={{ y: [0, -4, 0] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                  />
-                  <motion.span
-                    className="w-2 h-2 bg-muted-foreground rounded-full"
-                    animate={{ y: [0, -4, 0] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
-                  />
-                  <motion.span
-                    className="w-2 h-2 bg-muted-foreground rounded-full"
-                    animate={{ y: [0, -4, 0] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+            );
+          })}
+
+          {/* Status steps while waiting for agent response */}
+          {chatMode === "text" && statusSteps.length > 0 &&
+            (transcript.length === 0 || transcript[transcript.length - 1].role !== "agent") && (
+            <ChatStatusIndicator steps={statusSteps} />
+          )}
+          <AnimatePresence>
+            {chatMode === "text" && isTextLoading && statusSteps.length === 0 && (
+              <motion.div
+                key="dots"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-start space-x-2 justify-start"
+              >
+                <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+                  <Image
+                    src="/profile.webp"
+                    alt="Bill"
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-cover"
                   />
                 </div>
-              </div>
-            </motion.div>
-          )}
+                <div className="p-3 rounded-lg bg-card border border-border">
+                  <div className="flex gap-1" role="status" aria-label="AI is typing">
+                    <motion.span
+                      className="w-2 h-2 bg-muted-foreground rounded-full"
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                    />
+                    <motion.span
+                      className="w-2 h-2 bg-muted-foreground rounded-full"
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+                    />
+                    <motion.span
+                      className="w-2 h-2 bg-muted-foreground rounded-full"
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </ScrollArea>
 

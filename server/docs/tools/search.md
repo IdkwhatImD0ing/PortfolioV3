@@ -23,7 +23,7 @@ def search_projects(query: str, message: str) -> str:
     
     Args:
         query: Description of what kind of projects to search for
-        message: The message to speak before searching
+        message: Optional status text for non-voice UI while searching
     
     Returns:
         String description of matching projects with id, name, and summary
@@ -66,7 +66,7 @@ def get_project_details(project_id: str, message: str) -> str:
     
     Args:
         project_id: The unique project ID (e.g., "dispatch-ai")
-        message: The message to speak before fetching
+        message: Optional status text for non-voice UI while fetching
     
     Returns:
         Full project details including name, summary, and details
@@ -167,7 +167,7 @@ LLM: get_project_details(project_id="dispatch-ai", message="Let me
       get the details...")
     → Returns full project info
 
-LLM: display_project(id="dispatch-ai", message="Here's Dispatch AI")
+LLM: display_project(id="dispatch-ai")
     → Navigates to project page
 
 LLM: "So this won the UC Berkeley AI Hackathon grand prize..."

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
@@ -25,23 +26,7 @@ export const metadata: Metadata = {
   keywords: ['AI Engineer', 'Bill Zhang', 'Portfolio', 'Machine Learning', 'Conversational AI', 'Scale AI', 'USC'],
   authors: [{ name: 'Bill Zhang' }],
   creator: 'Bill Zhang',
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: 'https://art3m1s.me',
-    siteName: 'Bill Zhang Portfolio',
-    title: 'Bill Zhang | AI Engineer Portfolio',
-    description: 'Interactive voice-driven portfolio. AI Engineer at Scale AI.',
-    images: [{ url: '/profile.webp', width: 1200, height: 630, alt: 'Bill Zhang' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Bill Zhang | AI Engineer Portfolio',
-    description: 'Interactive voice-driven portfolio. AI Engineer at Scale AI.',
-    images: ['/profile.webp'],
-  },
   robots: { index: true, follow: true },
-  alternates: { canonical: 'https://art3m1s.me' },
   icons: {
     icon: [
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
@@ -90,6 +75,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>

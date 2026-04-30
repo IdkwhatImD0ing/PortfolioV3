@@ -35,7 +35,7 @@ import ProjectPage from "@/components/project";
 
 The backend navigates to this page by calling:
 ```python
-display_project(id="dispatch-ai", message="Let me show you this project")
+display_project(id="dispatch-ai")
 ```
 
 This sends a metadata event:

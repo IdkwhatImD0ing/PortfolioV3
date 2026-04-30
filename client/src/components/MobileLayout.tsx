@@ -6,12 +6,15 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { User, MessageCircle, ChevronUp, ChevronDown } from "lucide-react"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
+import { ChatStatusIndicator, type StatusStep } from "@/components/chat-status-indicator"
 import MobileControlBar from "@/components/MobileControlBar"
 import EducationPage from "@/components/education"
 import PersonalPage from "@/components/personal"
 import ProjectPage from "@/components/project"
 import ResumePage from "@/components/resume"
 import LandingPage from "@/components/LandingPage"
+import HackathonsPage from "@/components/hackathons"
+import ArchitecturePage from "@/components/architecture"
 import FallbackLink from "@/components/fallback-link"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import { toast } from "@/hooks/use-toast"
@@ -22,8 +25,8 @@ interface TranscriptEntry {
 }
 
 interface MobileLayoutProps {
-  activePage: "landing" | "education" | "project" | "personal" | "resume"
-  setActivePage: (page: "landing" | "education" | "project" | "personal" | "resume") => void
+  activePage: "landing" | "education" | "project" | "personal" | "resume" | "hackathon" | "architecture"
+  setActivePage: (page: "landing" | "education" | "project" | "personal" | "resume" | "hackathon" | "architecture") => void
   currentProjectId?: string
   isCalling: boolean
   startCall: () => void
@@ -34,6 +37,8 @@ interface MobileLayoutProps {
   setChatMode: (mode: "voice" | "text") => void
   sendTextMessage: (content: string) => void
   isTextLoading: boolean
+  statusSteps?: StatusStep[]
+  onNavigateToProject?: (projectId: string) => void
 }
 
 const PAGE_LABELS: Record<string, string> = {
@@ -42,6 +47,7 @@ const PAGE_LABELS: Record<string, string> = {
   education: "Education",
   project: "Projects",
   resume: "Resume",
+  hackathon: "Hackathons",
 }
 
 function MobileLayoutComponent({
@@ -57,6 +63,8 @@ function MobileLayoutComponent({
   setChatMode,
   sendTextMessage,
   isTextLoading,
+  statusSteps = [],
+  onNavigateToProject,
 }: MobileLayoutProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -170,6 +178,10 @@ function MobileLayoutComponent({
               {activePage === "education" && <EducationPage />}
               {activePage === "project" && <ProjectPage projectId={currentProjectId} />}
               {activePage === "resume" && <ResumePage />}
+              {activePage === "hackathon" && (
+                <HackathonsPage onNavigateToProject={onNavigateToProject} />
+              )}
+              {activePage === "architecture" && <ArchitecturePage />}
             </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
@@ -201,60 +213,93 @@ function MobileLayoutComponent({
           }`}
         >
             <div className="space-y-3" aria-live="polite" aria-atomic="false">
-              <AnimatePresence>
-                {transcript.map((entry, index) => (
-                  <motion.div
-                    key={`${entry.role}-${index}`}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className={`flex items-start space-x-2 ${entry.role === "agent" ? "justify-start" : "justify-end"}`}
-                  >
-                    {entry.role === "agent" && (
+              {transcript.map((entry, index) => {
+                const isLastAgent = entry.role === "agent" && index === transcript.length - 1;
+                const hasStatusSteps = isLastAgent && statusSteps.length > 0;
+
+                if (entry.role === "agent") {
+                  return (
+                    <motion.div
+                      key={`transcript-${index}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-start space-x-2 justify-start"
+                    >
                       <div className="shrink-0 w-7 h-7 rounded-full overflow-hidden border border-primary/20">
                         <Image src="/profile.webp" alt="Bill" width={28} height={28} className="w-full h-full object-cover" />
                       </div>
-                    )}
-                    <div
-                      className={`p-2.5 rounded-lg max-w-[80%] text-sm ${
-                        entry.role === "agent"
-                          ? "bg-card text-card-foreground border border-border prose-chat"
-                          : "bg-primary text-primary-foreground"
-                      }`}
-                    >
-                      {entry.role === "agent" ? (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{entry.content}</ReactMarkdown>
-                      ) : (
-                        entry.content
-                      )}
-                    </div>
-                    {entry.role === "user" && (
-                      <div className="shrink-0 w-7 h-7 rounded-full bg-secondary flex items-center justify-center" aria-label="You" role="img">
-                        <User size={14} className="text-secondary-foreground" aria-hidden="true" />
+                      <div className="flex flex-col gap-2 max-w-[80%]">
+                        {hasStatusSteps && (
+                          <ChatStatusIndicator steps={statusSteps} showAvatar={false} />
+                        )}
+                        <div className="p-2.5 rounded-lg text-sm bg-card text-card-foreground border border-border prose-chat">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{entry.content}</ReactMarkdown>
+                        </div>
                       </div>
-                    )}
+                    </motion.div>
+                  );
+                }
+
+                return (
+                  <motion.div
+                    key={`transcript-${index}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-start space-x-2 justify-end"
+                  >
+                    <div className="p-2.5 rounded-lg max-w-[80%] text-sm bg-primary text-primary-foreground">
+                      {entry.content}
+                    </div>
+                    <div className="shrink-0 w-7 h-7 rounded-full bg-secondary flex items-center justify-center" aria-label="You" role="img">
+                      <User size={14} className="text-secondary-foreground" aria-hidden="true" />
+                    </div>
                   </motion.div>
-                ))}
+                );
+              })}
+
+              {/* Status steps while waiting for agent response */}
+              {chatMode === "text" && statusSteps.length > 0 &&
+                (transcript.length === 0 || transcript[transcript.length - 1].role !== "agent") && (
+                <ChatStatusIndicator steps={statusSteps} />
+              )}
+              <AnimatePresence>
+                {chatMode === "text" && isTextLoading && statusSteps.length === 0 && (
+                  <motion.div key="dots" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-start space-x-2 justify-start">
+                    <div className="shrink-0 w-7 h-7 rounded-full overflow-hidden border border-primary/20">
+                      <Image src="/profile.webp" alt="Bill" width={28} height={28} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-card border border-border">
+                      <div className="flex gap-1" role="status" aria-label="AI is typing">
+                        <motion.span className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
+                        <motion.span className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }} />
+                        <motion.span className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }} />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </AnimatePresence>
 
-              {/* Typing indicator */}
-              {chatMode === "text" && isTextLoading && (
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-start space-x-2 justify-start">
+              {/* Welcome message for text mode */}
+              {transcript.length === 0 && chatMode === "text" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-start space-x-2 justify-start"
+                >
                   <div className="shrink-0 w-7 h-7 rounded-full overflow-hidden border border-primary/20">
                     <Image src="/profile.webp" alt="Bill" width={28} height={28} className="w-full h-full object-cover" />
                   </div>
-                  <div className="p-2.5 rounded-lg bg-card border border-border">
-                    <div className="flex gap-1" role="status" aria-label="AI is typing">
-                      <motion.span className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
-                      <motion.span className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }} />
-                      <motion.span className="w-1.5 h-1.5 bg-muted-foreground rounded-full" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }} />
-                    </div>
+                  <div className="p-2.5 rounded-lg max-w-[80%] bg-card text-card-foreground border border-border prose-chat text-sm">
+                    <p>Hi! I&apos;m Bill&apos;s AI assistant. Ask me anything about his projects, experience, or skills — I&apos;m here to help!</p>
                   </div>
                 </motion.div>
               )}
 
-              {/* Empty state */}
-              {transcript.length === 0 && (
+              {/* Empty state for voice mode */}
+              {transcript.length === 0 && chatMode === "voice" && (
                 <div className="text-center py-8 text-muted-foreground text-sm">
                   <p>No messages yet.</p>
                   <p className="text-xs mt-1">Start a conversation to see the transcript here.</p>

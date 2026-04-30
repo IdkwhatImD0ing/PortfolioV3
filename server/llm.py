@@ -189,53 +189,50 @@ async def security_guardrail(
 
 
 @tool
-def display_resume_page(message: str) -> str:
-    """Displays Bill's resume page on the frontend.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Let me show you my resume")
-    """
+def display_resume_page() -> str:
+    """Displays Bill's resume page on the frontend."""
     return "Successfully displayed the resume page"
 
 
 @tool
-def display_education_page(message: str) -> str:
-    """Displays the education page on the frontend.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Let me show you my education")
-    """
+def display_education_page() -> str:
+    """Displays the education page on the frontend."""
     return "Successfully displayed the education page"
 
 
 @tool
-def display_homepage(message: str) -> str:
-    """Displays Bill's personal homepage on the frontend.
-
-    Args:
-        message: The message to speak before navigating (e.g. "Let me show you my homepage")
-    """
+def display_homepage() -> str:
+    """Displays Bill's personal homepage on the frontend."""
     return "Successfully displayed the personal homepage"
 
 
 @tool
-def display_landing_page(message: str) -> str:
-    """Displays the landing page on the frontend - the initial voice-driven portfolio page.
+def display_hackathons_page() -> str:
+    """Displays the hackathons map page on the frontend, showing Bill's hackathon journey across the US."""
+    return "Successfully displayed the hackathons page"
 
-    Args:
-        message: The message to speak before navigating (e.g. "Going back to the main page")
-    """
+
+@tool
+def display_landing_page() -> str:
+    """Displays the landing page on the frontend - the initial voice-driven portfolio page."""
     return "Successfully displayed the landing page"
 
 
 @tool
-def display_project(id: str, message: str) -> str:
+def display_architecture_page() -> str:
+    """Displays the architecture / 'how it works' page on the frontend, showing
+    an interactive diagram of the portfolio's tech stack and request flow.
+    """
+    return "Successfully displayed the architecture page"
+
+
+@tool
+def display_project(id: str) -> str:
     """
     Displays a specific project on the frontend.
 
     Args:
         id: The unique project ID to display (e.g. "interviewgpt", "getitdone", "assignmenttracker")
-        message: The message to speak before navigating (e.g. "Let me show you this project")
 
     Returns:
         Confirmation message that the project was displayed
@@ -246,15 +243,16 @@ def display_project(id: str, message: str) -> str:
 @tool
 async def get_project_details(project_id: str, message: str) -> str:
     """
-    Get full details about a specific project by its ID.
+    Get full details about a specific project by its ID or name.
     Use this after searching to get complete information about a project.
 
     Args:
-        project_id: The unique project ID (e.g. "dispatch-ai", "interviewgpt", "getitdone")
-        message: The message to speak before fetching details (e.g. "Let me get more details about that project", "Let me tell you more about this one")
+        project_id: The unique project ID (e.g. "dispatch-ai", "interviewgpt", "getitdone") or project name
+        message: Optional status text for non-voice UI while fetching details.
 
     Returns:
-        Full project details including name, summary, and complete details
+        Full project details including the real project ID, name, summary, and complete details.
+        IMPORTANT: Use the "Project ID" from the response for any subsequent display_project calls.
     """
     try:
         project = await get_project_by_id(project_id)
@@ -262,12 +260,12 @@ async def get_project_details(project_id: str, message: str) -> str:
         if not project:
             return f"Could not find project with ID: {project_id}"
 
-        # Clean markdown from all text fields
         clean_name = clean_markdown(project["name"])
         clean_summary = clean_markdown(project["summary"])
         clean_details = clean_markdown(project["details"])
 
-        response = f"Project: {clean_name}\n\n"
+        response = f"Project ID: {project['id']}\n"
+        response += f"Project: {clean_name}\n\n"
         response += f"Summary: {clean_summary}\n\n"
         response += f"Details: {clean_details}"
 
@@ -278,21 +276,24 @@ async def get_project_details(project_id: str, message: str) -> str:
 
 
 @tool
-async def search_projects(query: str, message: str) -> str:
+async def search_projects(query: str, message: str, num_results: int = 3) -> str:
     """
     Search for Bill Zhang's projects based on a query. Returns summaries only.
     Use this when users ask about specific types of projects, technologies, or want to know what Bill has worked on.
-    For full project details, use get_project_details after searching.
+    For listing queries (e.g. "list all your X projects"), just present these results directly.
+    For detail queries about a specific project, use get_project_details after searching.
 
     Args:
         query: Description of what kind of projects to search for (e.g. "AI projects", "hackathon winners", "web development")
-        message: The message to speak before searching (e.g. "Let me search for those projects", "Looking through my projects")
+        message: Optional status text for non-voice UI while searching.
+        num_results: How many projects to return (3-10). Use 3 for specific lookups, 5-10 for listing or broad queries.
 
     Returns:
         String description of matching projects with id, name, and summary only
     """
     try:
-        results = await search_projects_impl(query, top_k=3)
+        top_k = max(3, min(10, num_results))
+        results = await search_projects_impl(query, top_k=top_k)
 
         if not results:
             return "No projects found matching that query."
@@ -320,20 +321,23 @@ class LlmClient:
         self.call_id = call_id
         self.mode = mode
 
-        # Select appropriate prompt based on mode
+        # Select appropriate prompt and reasoning based on mode.
+        # Voice mode disables reasoning ("none") for minimum latency on GPT-5.x.
+        # Text mode uses "low" reasoning for slightly better answer quality.
         system_prompt = voice_system_prompt if mode == "voice" else text_system_prompt
+        reasoning_effort = "none" if mode == "voice" else "low"
 
         # Create the main agent with input guardrails
         self.agent = Agent(
             name="portfolio_agent",
             instructions=system_prompt,
-            model="gpt-5-mini",
+            model="gpt-5.4-mini",
             tools=self.prepare_functions(),
-            input_guardrails=[security_guardrail],  # Pass the function directly
+            input_guardrails=[security_guardrail],
             model_settings=ModelSettings(
                 verbosity="low",
                 reasoning=Reasoning(
-                    effort="minimal",
+                    effort=reasoning_effort,
                     summary="auto",
                 ),
             ),
@@ -404,20 +408,42 @@ class LlmClient:
         """Return tool functions available to the agent."""
         return [
             display_education_page,
+            display_hackathons_page,
             display_homepage,
             display_landing_page,
             display_resume_page,
+            display_architecture_page,
             display_project,
             search_projects,
             get_project_details,
         ]
+
+    @staticmethod
+    def _tool_status_label(name: str, args: str) -> str | None:
+        """Map a tool call to a user-facing status label for the text chat UI."""
+        if name == "search_projects":
+            return "Searching projects..."
+        if name == "get_project_details":
+            try:
+                args_dict = json.loads(args) if args else {}
+                msg = args_dict.get("message", "")
+                if msg:
+                    return msg
+            except Exception:
+                pass
+            return "Pulling up project details..."
+        if name == "display_architecture_page":
+            return "Loading architecture..."
+        if name.startswith("display_"):
+            return None
+        return None
 
     async def draft_response(self, request: ResponseRequiredRequest):
         messages = self.prepare_prompt(request)
         response_id = request.response_id
 
         self._log(
-            f"draft_response: call_id={self.call_id} model=gpt-4o-mini messages={len(messages)} last_user='{(request.transcript[-1].content if request.transcript else '')[:120]}'",
+            f"draft_response: call_id={self.call_id} model=gpt-5.4-mini messages={len(messages)} last_user='{(request.transcript[-1].content if request.transcript else '')[:120]}'",
             flush=True,
         )
 
@@ -460,32 +486,6 @@ class LlmClient:
                             name = getattr(tool_call, "name", "")
                             args = getattr(tool_call, "arguments", "") or ""
 
-                            # Parse arguments to get the message parameter if it exists
-                            message_to_speak = None
-                            if name in [
-                                "display_homepage",
-                                "display_landing_page",
-                                "display_education_page",
-                                "display_resume_page",
-                                "display_project",
-                                "search_projects",
-                                "get_project_details",
-                            ]:
-                                try:
-                                    args_dict = json.loads(args) if args else {}
-                                    message_to_speak = args_dict.get("message")
-
-                                    # If message is provided, yield it as a response first
-                                    if message_to_speak:
-                                        yield ResponseResponse(
-                                            response_id=response_id,
-                                            content=message_to_speak + " ",
-                                            content_complete=False,
-                                            end_call=False,
-                                        )
-                                except:
-                                    pass
-
                             yield ToolCallInvocationResponse(
                                 tool_call_id=call_id,
                                 name=name,
@@ -507,6 +507,14 @@ class LlmClient:
                             elif name == "display_resume_page":
                                 yield MetadataResponse(
                                     metadata={"type": "navigation", "page": "resume"}
+                                )
+                            elif name == "display_hackathons_page":
+                                yield MetadataResponse(
+                                    metadata={"type": "navigation", "page": "hackathon"}
+                                )
+                            elif name == "display_architecture_page":
+                                yield MetadataResponse(
+                                    metadata={"type": "navigation", "page": "architecture"}
                                 )
                             elif name == "display_project":
                                 # Parse the arguments to get the project ID
@@ -612,12 +620,16 @@ class LlmClient:
             ):
                 result = Runner.run_streamed(self.agent, processed_messages)
 
+                yield TextChatStreamChunk(type="status", content="Thinking...")
+
                 async for event in result.stream_events():
                     if isinstance(event, RawResponsesStreamEvent):
                         data = event.data
-                        if getattr(data, "type", "") == "response.output_text.delta":
+                        event_type = getattr(data, "type", "")
+                        if event_type == "response.output_text.delta":
                             delta_content = getattr(data, "delta", "")
                             if delta_content:
+                                self._log(f"text content delta: {len(delta_content)} chars")
                                 yield TextChatStreamChunk(
                                     type="content",
                                     content=delta_content,
@@ -629,9 +641,10 @@ class LlmClient:
                             name = getattr(tool_call, "name", "")
                             args = getattr(tool_call, "arguments", "") or ""
 
-                            # Text mode: Don't inject tool message as content
-                            # The LLM will generate natural transition phrases
-                            # (Voice mode keeps message injection to mask latency)
+                            # Emit a human-readable status for tool calls
+                            status_label = self._tool_status_label(name, args)
+                            if status_label:
+                                yield TextChatStreamChunk(type="status", content=status_label)
 
                             # Send navigation metadata
                             if name == "display_homepage":
@@ -654,6 +667,16 @@ class LlmClient:
                                     type="metadata",
                                     metadata={"type": "navigation", "page": "resume"}
                                 )
+                            elif name == "display_hackathons_page":
+                                yield TextChatStreamChunk(
+                                    type="metadata",
+                                    metadata={"type": "navigation", "page": "hackathon"}
+                                )
+                            elif name == "display_architecture_page":
+                                yield TextChatStreamChunk(
+                                    type="metadata",
+                                    metadata={"type": "navigation", "page": "architecture"}
+                                )
                             elif name == "display_project":
                                 try:
                                     args_dict = json.loads(args) if args else {}
@@ -671,6 +694,9 @@ class LlmClient:
                                         type="metadata",
                                         metadata={"type": "navigation", "page": "project"}
                                     )
+
+                    else:
+                        self._log(f"unhandled stream event: {type(event).__name__}")
 
         except Exception as e:
             # Check if it's a guardrail tripwire trigger

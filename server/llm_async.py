@@ -33,6 +33,13 @@ def display_education_page() -> str:
 
 
 @tool
+def display_hackathons_page() -> str:
+    """Displays the hackathons map page showing Bill's hackathon journey across the US."""
+
+    return "Successfully displayed the hackathons page"
+
+
+@tool
 def display_homepage() -> str:
     """Displays the homepage on the frontend."""
 
@@ -53,7 +60,7 @@ class LlmClient:
         self.agent = Agent(
             name="portfolio_agent",
             instructions=system_prompt,
-            model=OpenAIResponsesModel("gpt-4o-mini", self.client),
+            model=OpenAIResponsesModel("gpt-5.4-mini", self.client),
             tools=self.prepare_functions(),
         )
         # Control verbose streaming logs via env or constructor
@@ -132,7 +139,7 @@ class LlmClient:
     def prepare_functions(self) -> List[Any]:
         """Return tool functions available to the agent."""
 
-        return [display_education_page, display_homepage, display_project]
+        return [display_education_page, display_hackathons_page, display_homepage, display_project]
 
     async def draft_response(self, request: ResponseRequiredRequest):
         """Fully async version using Runner.run() without streaming."""
@@ -142,7 +149,7 @@ class LlmClient:
         response_id = request.response_id
 
         self._log(
-            f"draft_response: call_id={self.call_id} model=gpt-4o-mini messages={len(messages)} last_user='{(request.transcript[-1].content if request.transcript else '')[:120]}'",
+            f"draft_response: call_id={self.call_id} model=gpt-5.4-mini messages={len(messages)} last_user='{(request.transcript[-1].content if request.transcript else '')[:120]}'",
             flush=True,
         )
 
@@ -174,6 +181,10 @@ class LlmClient:
                         if tool_name == "display_homepage":
                             yield MetadataResponse(
                                 metadata={"type": "navigation", "page": "personal"}
+                            )
+                        elif tool_name == "display_hackathons_page":
+                            yield MetadataResponse(
+                                metadata={"type": "navigation", "page": "hackathon"}
                             )
                         elif tool_name == "display_education_page":
                             yield MetadataResponse(

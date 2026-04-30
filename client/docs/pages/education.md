@@ -30,7 +30,7 @@ import EducationPage from "@/components/education";
 
 The backend navigates to this page by calling:
 ```python
-display_education_page(message="Let me show you my education background")
+display_education_page()
 ```
 
 This sends a metadata event:
