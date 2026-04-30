@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, memo } from "react"
 import Image from "next/image"
-import dynamic from "next/dynamic"
 import { User, MessageCircle, ChevronUp, ChevronDown } from "lucide-react"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import { ChatStatusIndicator, type StatusStep } from "@/components/chat-status-indicator"
@@ -17,11 +16,7 @@ import ArchitecturePage from "@/components/architecture"
 import FallbackLink from "@/components/fallback-link"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import { toast } from "@/hooks/use-toast"
-
-const MarkdownMessage = dynamic(() => import("@/components/markdown-message"), {
-  ssr: false,
-  loading: () => null,
-})
+import DeferredMarkdownMessage from "@/components/deferred-markdown-message"
 
 interface TranscriptEntry {
   role: "agent" | "user"
@@ -238,7 +233,7 @@ function MobileLayoutComponent({
                           <ChatStatusIndicator steps={statusSteps} showAvatar={false} />
                         )}
                         <div className="p-2.5 rounded-lg text-sm bg-card text-card-foreground border border-border prose-chat">
-                          <MarkdownMessage content={entry.content} />
+                          <DeferredMarkdownMessage content={entry.content} />
                         </div>
                       </div>
                     </motion.div>

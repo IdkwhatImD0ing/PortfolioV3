@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, memo } from "react"
 import Image from "next/image"
-import dynamic from "next/dynamic"
 import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform, MessageSquare, Send, Loader2, Copy, Check, RefreshCw, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -18,11 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import { ChatStatusIndicator, type StatusStep } from "@/components/chat-status-indicator"
-
-const MarkdownMessage = dynamic(() => import("@/components/markdown-message"), {
-  ssr: false,
-  loading: () => null,
-})
+import DeferredMarkdownMessage from "@/components/deferred-markdown-message"
 
 interface TranscriptEntry {
   role: "agent" | "user"
@@ -324,7 +319,7 @@ const VoiceChatSidebarComponent = ({
                       </div>
                     ) : (
                       <div className="prose prose-invert prose-sm max-w-none prose-headings:text-primary prose-a:text-blue-400">
-                        <MarkdownMessage content={summaryContent} />
+                        <DeferredMarkdownMessage content={summaryContent} />
                       </div>
                     )}
                   </div>
@@ -419,7 +414,7 @@ const VoiceChatSidebarComponent = ({
                       <ChatStatusIndicator steps={statusSteps} showAvatar={false} />
                     )}
                     <div className="p-3 rounded-lg bg-card text-card-foreground border border-border prose-chat">
-                      <MarkdownMessage content={entry.content} />
+                      <DeferredMarkdownMessage content={entry.content} />
                     </div>
                   </div>
                 </motion.div>

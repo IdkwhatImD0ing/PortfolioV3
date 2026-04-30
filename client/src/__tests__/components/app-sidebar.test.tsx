@@ -19,10 +19,15 @@ vi.mock('motion/react', () => ({
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: { src: string; alt: string }) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} {...props} />
-  ),
+  default: ({ src, alt, ...props }: { src: string; alt: string; priority?: boolean }) => {
+    const imgProps = { ...props }
+    delete imgProps.priority
+
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt={alt} {...imgProps} />
+    )
+  },
 }))
 
 describe('VoiceChatSidebar', () => {
