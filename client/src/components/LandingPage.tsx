@@ -19,25 +19,15 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
       <div className={`flex-1 flex items-center justify-center p-4 ${isMobile ? 'py-6' : 'overflow-y-auto'}`}>
         <div className="max-w-2xl text-center space-y-4">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-2"
-          >
+          <div className="space-y-2">
             <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
               Voice-Driven Portfolio
             </h1>
             <p className="text-lg text-muted-foreground">Experience my work through conversation, not clicks</p>
-          </motion.div>
+          </div>
 
           {/* Explanation Cards */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid gap-3 md:grid-cols-2"
-          >
+          <div className="grid gap-3 md:grid-cols-2">
             {/* Traditional Navigation - Disabled */}
             <div className="bg-card/50 border border-border rounded-xl p-4 relative overflow-hidden">
               <div className="absolute inset-0 bg-destructive/5"></div>
@@ -73,15 +63,10 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Instructions */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-card/30 border border-border rounded-xl p-4 space-y-3"
-          >
+          <div className="bg-card/30 border border-border rounded-xl p-4 space-y-3">
             <h2 className="text-lg font-semibold text-foreground">How It Works</h2>
 
             <div className="space-y-2 text-left">
@@ -119,15 +104,10 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Example Questions Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="bg-card/20 border border-primary/20 rounded-xl p-4 space-y-3"
-          >
+          <div className="bg-card/20 border border-primary/20 rounded-xl p-4 space-y-3">
             <h2 className="text-lg font-semibold text-foreground text-center">Try Asking...</h2>
 
             <div className="grid gap-2 md:grid-cols-2" role="list" aria-label="Example questions you can ask">
@@ -159,15 +139,10 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Quick Reference Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.55 }}
-            className="space-y-2"
-          >
+          <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Quick Reference</p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
@@ -213,15 +188,10 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
                 <Cpu className="w-3.5 h-3.5" />
               </button>
             </div>
-          </motion.div>
+          </div>
 
           {/* Call to Action */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.65 }}
-            className="flex items-center justify-center gap-2 text-primary"
-          >
+          <div className="flex items-center justify-center gap-2 text-primary">
             {isMobile ? (
               <>
                 <ArrowDown className="w-4 h-4" />
@@ -243,7 +213,7 @@ function LandingPage({ onNavigate, isMobile = false }: LandingPageProps) {
                 ></motion.div>
               </>
             )}
-          </motion.div>
+          </div>
 
           {/* Ambient Elements */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">

@@ -1,18 +1,12 @@
 "use client";
 
-import EducationPage from "@/components/education";
-import PersonalPage from "@/components/personal";
-import ProjectPage from "@/components/project";
-import ResumePage from "@/components/resume";
-import HackathonsPage from "@/components/hackathons";
-import ArchitecturePage from "@/components/architecture";
 import LandingPage from "@/components/LandingPage";
 import FallbackLink from "@/components/fallback-link";
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import type { RetellWebClient as RetellWebClientType } from "retell-client-js-sdk";
 import { VoiceChatSidebar } from "@/components/app-sidebar";
-import MobileLayout from "@/components/MobileLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/hooks/use-toast";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -33,6 +27,29 @@ interface TranscriptEntry {
   role: "agent" | "user";
   content: string;
 }
+
+const EducationPage = dynamic(() => import("@/components/education"), {
+  loading: () => <SectionLoading label="Loading education" />,
+});
+const PersonalPage = dynamic(() => import("@/components/personal"), {
+  loading: () => <SectionLoading label="Loading profile" />,
+});
+const ProjectPage = dynamic(() => import("@/components/project"), {
+  loading: () => <SectionLoading label="Loading projects" />,
+});
+const ResumePage = dynamic(() => import("@/components/resume"), {
+  loading: () => <SectionLoading label="Loading resume" />,
+});
+const HackathonsPage = dynamic(() => import("@/components/hackathons"), {
+  loading: () => <SectionLoading label="Loading hackathons" />,
+});
+const ArchitecturePage = dynamic(() => import("@/components/architecture"), {
+  loading: () => <SectionLoading label="Loading architecture" />,
+});
+const MobileLayout = dynamic(() => import("@/components/MobileLayout"), {
+  ssr: false,
+  loading: () => <LoadingSkeleton />,
+});
 
 function HomeContentInner() {
   const searchParams = useSearchParams();
@@ -458,10 +475,6 @@ function HomeContentInner() {
     }
   }, [fullTranscript, isTextLoading, handleNavigationMetadata]);
 
-  if (isMobile === undefined) {
-    return <LoadingSkeleton />;
-  }
-
   if (isMobile) {
     return (
       <ErrorBoundary>
@@ -545,6 +558,14 @@ function HomeContentInner() {
         </main>
       </div>
     </ErrorBoundary>
+  );
+}
+
+function SectionLoading({ label }: { label: string }) {
+  return (
+    <div className="flex min-h-[240px] w-full items-center justify-center p-8" role="status" aria-live="polite">
+      <span className="text-sm text-muted-foreground">{label}</span>
+    </div>
   );
 }
 

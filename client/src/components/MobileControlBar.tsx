@@ -129,13 +129,7 @@ export default function MobileControlBar({
       {/* Controls */}
       <AnimatePresence mode="wait">
         {chatMode === "voice" ? (
-          <motion.div
-            key="voice-controls"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
+          <div key="voice-controls">
             {!isCalling ? (
               <Button
                 onClick={toggleCall}
@@ -165,7 +159,7 @@ export default function MobileControlBar({
                 </Button>
               </div>
             )}
-          </motion.div>
+          </div>
         ) : (
           <motion.div
             key="text-controls"

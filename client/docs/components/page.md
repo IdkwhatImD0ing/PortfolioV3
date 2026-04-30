@@ -180,6 +180,14 @@ if (isMobile) {
 
 All state management remains in `page.tsx`; the `MobileLayout` component handles only rendering. See [mobile-layout.md](mobile-layout.md) for details.
 
+For desktop FCP, the first render defaults to the desktop shell while the viewport check resolves. This avoids showing a detection-only skeleton on desktop visits. `MobileLayout` is dynamically imported and only loaded after the client confirms a mobile viewport.
+
+## First-Load Performance
+
+The landing page is the only section bundled into the initial desktop view. Secondary sections such as education, projects, resume, hackathons, and architecture are dynamically imported when navigation changes to that section. This keeps map, PDF, and long-form section code out of the cold `/` load.
+
+Markdown parsing for transcript messages is also lazy loaded. The sidebar renders immediately with plain controls, and `react-markdown` is loaded only when a transcript or summary needs rich text rendering.
+
 ## Server Ping
 
 Pings backend on load to wake up Cloud Run:

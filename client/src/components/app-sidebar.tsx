@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef, memo } from "react"
 import Image from "next/image"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+import dynamic from "next/dynamic"
 import { Mic, Pause, Play, Square, User, AudioWaveformIcon as Waveform, MessageSquare, Send, Loader2, Copy, Check, RefreshCw, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -19,6 +18,11 @@ import {
 } from "@/components/ui/dialog"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import { ChatStatusIndicator, type StatusStep } from "@/components/chat-status-indicator"
+
+const MarkdownMessage = dynamic(() => import("@/components/markdown-message"), {
+  ssr: false,
+  loading: () => null,
+})
 
 interface TranscriptEntry {
   role: "agent" | "user"
@@ -231,6 +235,8 @@ const VoiceChatSidebarComponent = ({
             alt="Bill Zhang"
             width={120}
             height={120}
+            priority
+            sizes="120px"
             onClick={activePage !== "landing" && onNavigateHome ? onNavigateHome : undefined}
             className={`rounded-full border-2 border-primary z-10 relative ${
               activePage !== "landing" && onNavigateHome ? "cursor-pointer hover:opacity-80 transition-opacity" : ""
@@ -318,9 +324,7 @@ const VoiceChatSidebarComponent = ({
                       </div>
                     ) : (
                       <div className="prose prose-invert prose-sm max-w-none prose-headings:text-primary prose-a:text-blue-400">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {summaryContent}
-                        </ReactMarkdown>
+                        <MarkdownMessage content={summaryContent} />
                       </div>
                     )}
                   </div>
@@ -415,9 +419,7 @@ const VoiceChatSidebarComponent = ({
                       <ChatStatusIndicator steps={statusSteps} showAvatar={false} />
                     )}
                     <div className="p-3 rounded-lg bg-card text-card-foreground border border-border prose-chat">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {entry.content}
-                      </ReactMarkdown>
+                      <MarkdownMessage content={entry.content} />
                     </div>
                   </div>
                 </motion.div>
@@ -498,13 +500,7 @@ const VoiceChatSidebarComponent = ({
       <div className="p-4 border-t border-border">
         <AnimatePresence mode="wait">
           {chatMode === "voice" ? (
-            <motion.div
-              key="voice-controls"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
+            <div key="voice-controls">
               {!isCalling ? (
                 <Button
                   onClick={toggleCall}
@@ -538,7 +534,7 @@ const VoiceChatSidebarComponent = ({
                   </Button>
                 </div>
               )}
-            </motion.div>
+            </div>
           ) : (
             <motion.div
               key="text-controls"

@@ -97,3 +97,7 @@ Edit the Quick Reference section in `src/components/LandingPage.tsx`. Use a stan
 
 - [../components/page.md](../components/page.md) - Parent component managing navigation
 - `src/components/fallback-link.tsx` - Mobile fallback link
+
+## Performance Notes
+
+Above-the-fold landing content renders visible on the server response. Avoid wrapping the heading, intro cards, instructions, example questions, quick links, or CTA in initial `opacity: 0` entrance animations, because Chrome can delay LCP until those elements become visible after hydration. Decorative pulse and ambient animations are safe because they are not primary content.
