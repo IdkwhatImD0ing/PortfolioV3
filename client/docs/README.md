@@ -83,6 +83,9 @@ npm run lint         # Run ESLint
 - [components/page.md](components/page.md) - Main page state management
 - [components/app-sidebar.md](components/app-sidebar.md) - Voice chat sidebar
 
+### Public Metadata
+- [llms.md](llms.md) - LLM-friendly site overview served from `/llms.txt`
+
 ### Libraries
 - [lib/data-cache.md](lib/data-cache.md) - Project data caching
 
