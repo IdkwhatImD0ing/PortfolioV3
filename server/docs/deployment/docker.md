@@ -7,6 +7,10 @@ Documentation for containerization and Cloud Run deployment.
 - `Dockerfile` - Container configuration
 - `deploy.sh` - Cloud Run deployment script
 
+## Related Services
+
+Browserless is deployed as a separate Cloud Run service from the repository-level `browserless/` module. See [../../../browserless/docs/README.md](../../../browserless/docs/README.md) for the headless browser deployment path.
+
 ## Dockerfile
 
 ```dockerfile
