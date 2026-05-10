@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, memo } from "react"
 import { motion } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Github, LinkIcon } from "lucide-react"
+import { ExternalLink, Github, LinkIcon } from "lucide-react"
 import Image from "next/image"
 import { dataCache, type Project } from "@/lib/dataCache"
 
@@ -257,7 +257,7 @@ function ProjectPage({ projectId }: ProjectPageProps) {
                 </motion.div>
               </div>
 
-              <motion.div className="flex gap-4 mt-6 pt-6 border-t border-[#2A2A3B] flex-shrink-0" variants={itemVariants}>
+              <motion.div className="flex flex-wrap gap-4 mt-6 pt-6 border-t border-[#2A2A3B] flex-shrink-0" variants={itemVariants}>
                 {currentProject?.github && (
                   <Button
                     asChild
@@ -276,6 +276,28 @@ function ProjectPage({ projectId }: ProjectPageProps) {
                     >
                       <Github size={18} aria-hidden="true" />
                       GitHub
+                      <span className="sr-only">(opens in new tab)</span>
+                    </a>
+                  </Button>
+                )}
+                {currentProject?.projectUrl && (
+                  <Button
+                    asChild
+                    className="flex items-center gap-2 transition-all duration-300"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #A259FF",
+                      color: "#E6E6F1",
+                    }}
+                  >
+                    <a
+                      href={currentProject.projectUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${currentProject.name} project page (opens in new tab)`}
+                    >
+                      <ExternalLink size={18} aria-hidden="true" />
+                      Project Page
                       <span className="sr-only">(opens in new tab)</span>
                     </a>
                   </Button>

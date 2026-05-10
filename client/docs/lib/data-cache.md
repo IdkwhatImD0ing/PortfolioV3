@@ -20,6 +20,7 @@ interface Project {
   details: string;
   github: string | null;
   demo: string | null;
+  projectUrl?: string | null;
 }
 ```
 
@@ -175,7 +176,8 @@ useEffect(() => {
     "summary": "AI-powered emergency call handling...",
     "details": "Full description with markdown...",
     "github": "https://github.com/user/repo",
-    "demo": "https://youtube.com/watch?v=xxx"
+    "demo": "https://youtube.com/watch?v=xxx",
+    "projectUrl": "https://example.com/project"
   },
   // ... more projects
 ]
@@ -195,6 +197,7 @@ interface Project {
   details: string;
   github: string | null;
   demo: string | null;
+  projectUrl?: string | null;
   tags?: string[];  // New field
 }
 ```

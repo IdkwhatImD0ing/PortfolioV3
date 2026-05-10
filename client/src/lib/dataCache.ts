@@ -5,6 +5,7 @@ interface Project {
   details: string
   github: string | null
   demo: string | null
+  projectUrl?: string | null
 }
 
 class DataCache {

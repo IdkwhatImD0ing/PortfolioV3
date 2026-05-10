@@ -8,6 +8,7 @@ export interface ProjectData {
   details: string
   github: string | null
   demo: string | null
+  projectUrl?: string | null
 }
 
 let cachedProjects: ProjectData[] | null = null

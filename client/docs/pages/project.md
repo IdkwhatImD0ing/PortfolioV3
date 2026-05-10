@@ -11,7 +11,7 @@ Documentation for the project page component.
 Displays detailed information about a specific project, including:
 - Project name and description
 - Demo video or image
-- GitHub and demo links
+- GitHub, project page, and demo links
 - Project navigation (carousel-style)
 
 ## Props
@@ -87,12 +87,17 @@ Users can navigate between projects using:
 
 ### Add Project Links
 
-Project links (GitHub, Demo) are rendered from project data:
+Project links (GitHub, Project Page, Demo) are rendered from project data:
 
 ```tsx
 {project.github && (
   <a href={project.github} target="_blank">
     <Github /> View Code
+  </a>
+)}
+{project.projectUrl && (
+  <a href={project.projectUrl} target="_blank">
+    <ExternalLink /> Project Page
   </a>
 )}
 ```
